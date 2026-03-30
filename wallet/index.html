@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Wallet - BDG Game</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
         body { background-color: #1a1a1a; display: flex; justify-content: center; color: white; }
@@ -34,7 +38,7 @@
         .history-table th { background: #222; padding: 12px; text-align: left; color: #888; }
         .history-table td { padding: 12px; border-bottom: 1px solid #222; }
         
-        /* Status Colors (ডিলিট হবে না, শুধু কালার চেঞ্জ হবে) */
+        /* Status Colors */
         .status-pending { color: #ffc107; font-weight: bold; }
         .status-approved { color: #4caf50; font-weight: bold; }
         .status-rejected { color: #f44336; font-weight: bold; }
@@ -78,7 +82,7 @@
             <h4 id="form-title">Request</h4>
             <input type="number" id="req-amount" placeholder="Enter Amount (Min ₹100)">
             <input type="text" id="req-info" placeholder="Details">
-            <button onclick="submitRequest()">Submit Request</button>
+            <button id="submit-btn" onclick="submitRequest()">Submit Request</button>
             <p onclick="closeForm()" style="text-align:center; font-size:12px; margin-top:10px; cursor:pointer; color:#888;">Cancel</p>
         </div>
 
@@ -92,13 +96,12 @@
                         <th>Status</th>
                     </tr>
                 </thead>
-                <tbody id="history-list">
-                    </tbody>
+                <tbody id="history-list"></tbody>
             </table>
         </div>
 
         <nav class="bottom-nav">
-            <a href="../lobby/index.html" class="nav-item"><i class="fa-solid fa-house"></i>Home</a>
+            <a href="../index.html" class="nav-item"><i class="fa-solid fa-house"></i>Home</a>
             <a href="../activity/index.html" class="nav-item"><i class="fa-solid fa-gift"></i>Activity</a>
             <a href="index.html" class="nav-item active"><i class="fa-solid fa-wallet"></i>Wallet</a>
             <a href="../account/index.html" class="nav-item"><i class="fa-solid fa-user"></i>Account</a>
@@ -106,39 +109,54 @@
     </div>
 
     <script>
+        // --- Firebase Configuration ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyD2It_WJyq3VzjGFE0tqlm_Wac7CHEb2LI",
+            authDomain: "bdg-game-35af2.firebaseapp.com",
+            databaseURL: "https://bdg-game-35af2-default-rtdb.firebaseio.com",
+            projectId: "bdg-game-35af2",
+            storageBucket: "bdg-game-35af2.firebasestorage.app",
+            messagingSenderId: "1040854462703",
+            appId: "1:1040854462703:web:4875b19f420c57dafbeb1a"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
         let currentAction = "";
 
         // ডাটা লোড করার ফাংশন
         function loadWalletData() {
-            // ব্যালেন্স আপডেট
+            // লোকাল ব্যালেন্স দেখানো
             let bal = localStorage.getItem('bal') || "0.00";
             document.getElementById('wall-bal').innerText = parseFloat(bal).toFixed(2);
 
-            // হিস্ট্রি টেবিল লোড
-            const historyList = document.getElementById('history-list');
-            let requests = JSON.parse(localStorage.getItem('allRequests') || "[]");
-            
-            historyList.innerHTML = "";
-            if(requests.length === 0) {
-                historyList.innerHTML = "<tr><td colspan='3' style='text-align:center; color:#555;'>No history found</td></tr>";
-            }
+            const user = JSON.parse(localStorage.getItem('userData'));
+            if(!user) return;
 
-            // নতুন রিকোয়েস্টগুলো উপরে দেখানোর জন্য reverse() ব্যবহার করা হয়েছে
-            requests.slice().reverse().forEach(req => {
-                let statusClass = "";
+            // Firebase থেকে শুধুমাত্র এই ইউজারের হিস্ট্রি লোড করা
+            database.ref('allRequests').orderByChild('phone').equalTo(user.phone).on('value', (snapshot) => {
+                const historyList = document.getElementById('history-list');
+                historyList.innerHTML = "";
                 
-                // স্ট্যাটাস অনুযায়ী ডাইনামিক ক্লাস সেট (Approved/Rejected হলেও ডিলিট হবে না)
-                if(req.status === 'Pending') statusClass = "status-pending";
-                else if(req.status === 'Approved') statusClass = "status-approved";
-                else if(req.status === 'Rejected') statusClass = "status-rejected";
+                const data = snapshot.val();
+                if(!data) {
+                    historyList.innerHTML = "<tr><td colspan='3' style='text-align:center; color:#555;'>No history found</td></tr>";
+                    return;
+                }
 
-                historyList.innerHTML += `
-                    <tr>
-                        <td>${req.type}</td>
-                        <td>₹${req.amount}</td>
-                        <td class="${statusClass}">${req.status}</td>
-                    </tr>
-                `;
+                // ডাটাগুলোকে অ্যারে বানিয়ে উল্টে দেওয়া (নতুনগুলো উপরে দেখানোর জন্য)
+                const requests = Object.values(data).reverse();
+
+                requests.forEach(req => {
+                    let statusClass = "status-" + req.status.toLowerCase();
+                    historyList.innerHTML += `
+                        <tr>
+                            <td>${req.type}</td>
+                            <td>₹${req.amount}</td>
+                            <td class="${statusClass}">${req.status}</td>
+                        </tr>
+                    `;
+                });
             });
         }
 
@@ -164,29 +182,32 @@
             if(currentAction === 'Withdraw' && amt > currentBal) return alert("Insufficient balance!");
             if(info.length < 5) return alert("Enter valid details!");
 
-            let requests = JSON.parse(localStorage.getItem('allRequests') || "[]");
-            
-            let newReq = {
+            const btn = document.getElementById('submit-btn');
+            btn.disabled = true;
+            btn.innerText = "Processing...";
+
+            // Firebase-এ ডাটা পাঠানো
+            const newReqRef = database.ref('allRequests').push();
+            newReqRef.set({
                 id: Date.now(),
                 phone: user.phone,
                 type: currentAction,
                 amount: amt,
                 bankInfo: info,
-                status: 'Pending'
-            };
-
-            requests.push(newReq);
-            localStorage.setItem('allRequests', JSON.stringify(requests));
-
-            alert(currentAction + " Request Sent Successfully! ⏳");
-            closeForm();
-            loadWalletData(); 
+                status: 'Pending',
+                timestamp: firebase.database.ServerValue.TIMESTAMP
+            }).then(() => {
+                alert(currentAction + " Request Sent to Online Admin! ⏳");
+                btn.disabled = false;
+                btn.innerText = "Submit Request";
+                closeForm();
+            }).catch(err => {
+                alert("Error: " + err.message);
+                btn.disabled = false;
+            });
         }
 
         window.onload = loadWalletData;
-        
-        // ৩ সেকেন্ড পর পর অটো রিফ্রেশ হবে যাতে স্ট্যাটাস আপডেট দেখা যায়
-        setInterval(loadWalletData, 3000);
     </script>
 </body>
 </html>
