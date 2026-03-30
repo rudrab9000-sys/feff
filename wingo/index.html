@@ -38,16 +38,12 @@
         .tab.active { color: #ffc107; border-bottom: 3px solid #ffc107; }
         table { width: 100%; color: #ccc; text-align: center; font-size: 12px; border-collapse: collapse; }
         td, th { padding: 12px 5px; border-bottom: 1px solid #2a2a2a; }
-        .processing { color: #ffc107; font-style: italic; animation: pulse 1s infinite; }
-        @keyframes pulse { 50% { opacity: 0.5; } }
         .res-ball { width: 25px; height: 25px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; color: white; font-weight: bold; }
-        .bg-red { background-color: #f44336; }
-        .bg-green { background-color: #4caf50; }
+        .bg-red { background-color: #f44336; } .bg-green { background-color: #4caf50; }
         .bg-n0 { background: linear-gradient(135deg, #9c27b0 50%, #f44336 50%); }
         .bg-n5 { background: linear-gradient(135deg, #9c27b0 50%, #4caf50 50%); }
         .tag { padding: 3px 10px; border-radius: 5px; font-size: 11px; font-weight: bold; color: white; }
-        .tag-big { background-color: #ffa000; }
-        .tag-small { background-color: #3a7bd5; }
+        .tag-big { background-color: #ffa000; } .tag-small { background-color: #3a7bd5; }
         .toast { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.9); color: white; padding: 12px 25px; border-radius: 30px; font-size: 14px; z-index: 1000; display: none; }
         .res-popup { display: none; position: fixed; top: 0; width: 375px; height: 100%; background: rgba(0,0,0,0.9); z-index: 200; flex-direction: column; justify-content: center; align-items: center; }
         .res-card { background: #222; padding: 30px; border-radius: 20px; text-align: center; border: 1px solid #ffc107; transform: scale(0.5); transition: 0.3s; }
@@ -57,11 +53,11 @@
 <body>
 
     <div class="wrapper">
-        <header class="header"><a href="../lobby/index.html" style="color:white;"><i class="fa-solid fa-chevron-left"></i></a> <b>WinGo 30s</b> <i class="fa-solid fa-circle-question"></i></header>
+        <header class="header"><a href="../lobby/index.html" style="color:white;"><i class="fa-solid fa-chevron-left"></i></a> <b>WinGo 30s Live</b></header>
         <div class="balance-card"><p>Wallet Balance</p><h1>₹ <span id="balance">1000.00</span></h1></div>
         <div class="timer-container">
-            <div><p style="font-size:12px; color:#aaa;">Period Number</p><h4 id="period">20260330001</h4></div>
-            <div style="text-align:right;"><p style="font-size:12px; color:#aaa;">Time</p><div class="time-display" id="timer">00:30</div></div>
+            <div><p style="font-size:12px; color:#aaa;">Period Number</p><h4 id="period">Loading...</h4></div>
+            <div style="text-align:right;"><p style="font-size:12px; color:#aaa;">Time</p><div class="time-display" id="timer">00:00</div></div>
         </div>
 
         <div class="color-btns">
@@ -91,14 +87,11 @@
         <div class="modal-box">
             <h3 id="bet-title">Select: Green</h3>
             <input type="number" id="custom-amt" class="custom-input" value="10">
-            <p style="font-size:11px; color:#888; margin-bottom:15px;">2% GST Fee will be applied.</p>
             <button onclick="confirmBet()" style="width:100%; background:#d32f2f; color:white; padding:15px; border:none; border-radius:30px; font-weight:bold;">Confirm</button>
             <button onclick="closeModal()" style="width:100%; background:none; border:none; color:#888; margin-top:10px;">Cancel</button>
         </div>
     </div>
 
-    <div id="toast" class="toast">Bet Placed Successfully!</div>
-    
     <div id="res-popup" class="res-popup">
         <div class="res-card" id="res-card">
             <h2 id="res-msg" style="color: #ffc107;">Congratulations</h2>
@@ -108,7 +101,7 @@
     </div>
 
     <script>
-        // Firebase Configuration
+        // --- Firebase Config ---
         const firebaseConfig = {
             apiKey: "AIzaSyD2It_WJyq3VzjGFE0tqlm_Wac7CHEb2LI",
             authDomain: "bdg-game-35af2.firebaseapp.com",
@@ -124,9 +117,82 @@
         let balance = parseFloat(localStorage.getItem('bal')) || 1000.00;
         let gameHistory = JSON.parse(localStorage.getItem('gameH')) || [];
         let myHistory = JSON.parse(localStorage.getItem('myH')) || [];
-        let period = 20260330001;
         let isLockdown = false;
         let selectedBet = "";
+
+        // ১. রিয়েল-টাইম টাইমার (রিফ্রেশ করলেও টাইম ঠিক থাকবে)
+        function startTimer() {
+            setInterval(() => {
+                const now = new Date();
+                const seconds = now.getSeconds();
+                const s = (seconds >= 30) ? 60 - seconds : 30 - seconds;
+                
+                // পিরিয়ড আইডি আপডেট
+                const pID = generatePeriodID();
+                document.getElementById('period').innerText = pID;
+
+                if (s <= 5) { 
+                    isLockdown = true; 
+                    document.getElementById('timer').classList.add('lockdown'); 
+                    closeModal(); 
+                } else {
+                    isLockdown = false;
+                    document.getElementById('timer').classList.remove('lockdown');
+                }
+
+                // টাইমার যখন ১ সেকেন্ডে আসবে, তখন রেজাল্ট বের করবে
+                if (s === 1) {
+                    setTimeout(() => generateResult(pID), 1000);
+                }
+
+                document.getElementById('timer').innerText = "00:" + (s < 10 ? "0" + s : s);
+            }, 1000);
+        }
+
+        function generatePeriodID() {
+            const now = new Date();
+            const dateStr = now.toISOString().slice(0, 10).replace(/-/g, "");
+            const totalSeconds = (now.getHours() * 3600) + (now.getMinutes() * 60) + now.getSeconds();
+            const periodNum = Math.floor(totalSeconds / 30);
+            return dateStr + periodNum;
+        }
+
+        async function generateResult(pID) {
+            const snapshot = await database.ref('gameControl/nextResult').get();
+            let num;
+            if (snapshot.exists()) {
+                num = parseInt(snapshot.val());
+                database.ref('gameControl/nextResult').remove(); // একবারে ব্যবহার করে মুছে ফেলা
+            } else {
+                num = Math.floor(Math.random() * 10);
+            }
+
+            const size = num <= 4 ? "Small" : "Big";
+            const color = (num === 0 || num === 5) ? "Violet" : (num % 2 === 0 ? "Red" : "Green");
+            
+            const resObj = { p: pID, n: num, s: size, c: color };
+            gameHistory.unshift(resObj);
+            if(gameHistory.length > 20) gameHistory.pop();
+
+            // বেটিং চেক
+            let winTotal = 0, hasBet = false, winFlag = false;
+            myHistory.forEach(bet => {
+                if(bet.p == pID && bet.res === "Processing") {
+                    hasBet = true;
+                    let win = (bet.sel === color || bet.sel === num.toString() || bet.sel === size);
+                    if(win) {
+                        let mult = isNaN(bet.sel) ? 1.96 : 9;
+                        winTotal += bet.amt * 0.98 * mult;
+                        bet.res = "WIN"; bet.color = "#4caf50"; winFlag = true;
+                    } else {
+                        bet.res = "LOSS"; bet.color = "#f44336";
+                    }
+                }
+            });
+
+            if(hasBet) { balance += winTotal; showResultPopup(winFlag, winTotal); }
+            updateUI();
+        }
 
         function updateUI() {
             document.getElementById('balance').innerText = balance.toFixed(2);
@@ -139,133 +205,38 @@
         function renderTables() {
             document.getElementById('game-records').innerHTML = gameHistory.map(g => {
                 let ballClass = g.n === 0 ? "bg-n0" : (g.n === 5 ? "bg-n5" : (g.n % 2 === 0 ? "bg-red" : "bg-green"));
-                let sizeClass = g.s === "Big" ? "tag-big" : "tag-small";
-                return `<tr><td>${g.p}</td><td><div class="res-ball ${ballClass}">${g.n}</div></td><td><span class="tag ${sizeClass}">${g.s}</span></td><td>${g.c}</td></tr>`;
+                return `<tr><td>${g.p}</td><td><div class="res-ball ${ballClass}">${g.n}</div></td><td>${g.s}</td><td>${g.c}</td></tr>`;
             }).join('');
-
             document.getElementById('my-records').innerHTML = myHistory.map(h => 
-                `<tr><td>${h.p}</td><td>${h.sel}</td><td>${h.amt}</td><td style="color:${h.color}; font-weight:bold;">${h.res}</td></tr>`
+                `<tr><td>${h.p}</td><td>${h.sel}</td><td>${h.amt}</td><td style="color:${h.color}">${h.res}</td></tr>`
             ).join('');
         }
 
-        function startTimer() {
-            setInterval(() => {
-                let now = new Date();
-                let seconds = now.getSeconds();
-                let s = (seconds >= 30) ? 60 - seconds : 30 - seconds;
-                
-                if (s <= 5) { isLockdown = true; document.getElementById('timer').classList.add('lockdown'); closeModal(); }
-                if (s === 30 || s === 60 || s === 0) {
-                    if(!isLockdown) return; // Prevent double call
-                    isLockdown = false;
-                    document.getElementById('timer').classList.remove('lockdown');
-                    generateResult();
-                    period = generatePeriodID();
-                    document.getElementById('period').innerText = period;
-                }
-                document.getElementById('timer').innerText = "00:" + (s < 10 ? "0" + s : s);
-            }, 1000);
-        }
-
-        function generatePeriodID() {
-            let now = new Date();
-            let dateStr = now.toISOString().slice(0, 10).replace(/-/g, "");
-            let totalSeconds = (now.getHours() * 3600) + (now.getMinutes() * 60) + now.getSeconds();
-            let periodNum = Math.floor(totalSeconds / 30);
-            return dateStr + periodNum;
-        }
-
-        async function generateResult() {
-            // Firebase থেকে হ্যাক করা রেজাল্ট চেক করা
-            const snapshot = await database.ref('gameControl/nextResult').get();
-            let num;
-            if (snapshot.exists()) {
-                num = parseInt(snapshot.val());
-                database.ref('gameControl/nextResult').remove(); // ব্যবহারের পর মুছে ফেলা
-            } else {
-                num = Math.floor(Math.random() * 10);
-            }
-
-            const size = num <= 4 ? "Small" : "Big";
-            const color = (num === 0 || num === 5) ? "Violet" : (num % 2 === 0 ? "Red" : "Green");
-            
-            let currentPeriod = document.getElementById('period').innerText;
-            gameHistory.unshift({ p: currentPeriod, n: num, s: size, c: color });
-            if(gameHistory.length > 20) gameHistory.pop();
-
-            let winTotal = 0;
-            let hasBet = false;
-            let winFlag = false;
-
-            myHistory.forEach(bet => {
-                if(bet.p == currentPeriod && bet.res === "Processing") {
-                    hasBet = true;
-                    let win = (bet.sel === color || bet.sel === num.toString() || bet.sel === size);
-                    if(win) {
-                        let mult = isNaN(bet.sel) ? 1.96 : 9.0;
-                        winTotal += bet.final * mult;
-                        bet.res = "WIN"; bet.color = "#4caf50";
-                        winFlag = true;
-                    } else {
-                        bet.res = "LOSS"; bet.color = "#f44336";
-                    }
-                }
-            });
-
-            if(hasBet) {
-                balance += winTotal;
-                showResultPopup(winFlag, winTotal);
-            }
-            updateUI();
-        }
-
-        function openBet(val) {
-            if(isLockdown) return;
-            selectedBet = val;
-            document.getElementById('bet-title').innerText = "Select: " + val;
-            document.getElementById('modal').style.display = 'flex';
-        }
+        function openBet(val) { if(isLockdown) return; selectedBet = val; document.getElementById('bet-title').innerText = "Select: " + val; document.getElementById('modal').style.display = 'flex'; }
         function closeModal() { document.getElementById('modal').style.display = 'none'; }
-        
         function confirmBet() {
             let amt = parseFloat(document.getElementById('custom-amt').value);
+            let currentP = document.getElementById('period').innerText;
             if (balance >= amt && amt > 0) {
                 balance -= amt;
-                myHistory.unshift({ p: period, sel: selectedBet, amt: amt, final: amt * 0.98, res: "Processing", color: "#ffc107" });
-                updateUI();
-                closeModal();
-                showToast("Bet Placed!");
-            } else { showToast("Insufficient Balance!"); }
+                myHistory.unshift({ p: currentP, sel: selectedBet, amt: amt, res: "Processing", color: "#ffc107" });
+                updateUI(); closeModal();
+            }
         }
-
         function showResultPopup(win, amt) {
             document.getElementById('res-msg').innerText = win ? "Congratulations" : "Better Luck Next Time";
             document.getElementById('res-amount').innerText = (win ? "+ ₹" : "₹") + amt.toFixed(2);
             document.getElementById('res-popup').style.display = 'flex';
             setTimeout(() => document.getElementById('res-card').classList.add('show'), 10);
         }
-        function closeResult() {
-            document.getElementById('res-card').classList.remove('show');
-            setTimeout(() => document.getElementById('res-popup').style.display = 'none', 300);
-        }
-        function showToast(msg) {
-            let t = document.getElementById('toast');
-            t.innerText = msg; t.style.display = 'block';
-            setTimeout(() => t.style.display = 'none', 2000);
-        }
+        function closeResult() { document.getElementById('res-card').classList.remove('show'); setTimeout(() => document.getElementById('res-popup').style.display = 'none', 300); }
         function switchTab(type, el) {
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             el.classList.add('active');
             document.getElementById('game-list').style.display = type === 'game' ? 'block' : 'none';
             document.getElementById('my-list').style.display = type === 'my' ? 'block' : 'none';
         }
-
-        window.onload = () => { 
-            period = generatePeriodID();
-            document.getElementById('period').innerText = period;
-            startTimer(); 
-            updateUI(); 
-        };
+        window.onload = () => { startTimer(); updateUI(); };
     </script>
 </body>
 </html>
