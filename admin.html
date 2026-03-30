@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WinGo Master Admin - Online</title>
+    <title>WinGo Master Admin - Live Control</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
@@ -14,92 +14,53 @@
         body { background: #0f0f0f; color: white; padding: 20px; }
         .admin-wrapper { max-width: 1000px; margin: 0 auto; }
         h2 { color: #ffc107; margin-bottom: 20px; text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px; }
-
-        /* Grid Layout */
         .admin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         .card { background: #1a1a1a; padding: 20px; border-radius: 15px; border: 1px solid #333; margin-bottom: 20px; }
-
-        /* Result Control */
         .btn-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-top: 15px; }
-        .num-btn { padding: 10px; border-radius: 8px; border: 1px solid #444; background: #222; color: white; cursor: pointer; font-weight: bold; }
-        .num-btn.active { background: #ffc107; color: black; border-color: #ffc107; }
-
-        /* Tables */
+        .num-btn { padding: 10px; border-radius: 8px; border: 1px solid #444; background: #222; color: white; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        .num-btn.active { background: #ffc107; color: black; border-color: #ffc107; box-shadow: 0 0 10px #ffc107; }
         table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
         th, td { padding: 12px; text-align: left; border-bottom: 1px solid #333; }
         th { color: #888; }
-        .action-input { width: 70px; padding: 5px; background: #000; border: 1px solid #444; color: #ffc107; border-radius: 5px; }
-        
-        /* Buttons */
-        .btn-sm { padding: 6px 12px; border-radius: 5px; border: none; cursor: pointer; font-size: 12px; font-weight: bold; }
-        .btn-add { background: #2e7d32; color: white; }
-        .btn-minus { background: #c62828; color: white; }
-        .btn-reject { background: #555; color: white; margin-left: 5px; }
-
-        /* Type Badge */
-        .badge { padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; }
-        .bg-deposit { background: #2e7d32; color: white; }
-        .bg-withdraw { background: #f57c00; color: white; }
+        .status-text { font-size: 12px; margin-top: 10px; text-align: center; display: block; }
     </style>
 </head>
 <body>
 
 <div class="admin-wrapper">
-    <h2><i class="fa-solid fa-user-shield"></i> BDG Master Admin Panel (Online)</h2>
+    <h2><i class="fa-solid fa-user-shield"></i> BDG Master Admin (LIVE)</h2>
 
     <div class="admin-grid">
         <div class="card">
             <h3><i class="fa-solid fa-gamepad"></i> Next Result Control</h3>
+            <p style="font-size: 11px; color: #888; margin-bottom: 10px;">টাইমার শেষ হওয়ার আগে যেকোনো নাম্বারে ক্লিক করুন।</p>
             <div class="btn-grid">
-                <button class="num-btn" onclick="setNext(0, this)">0</button>
-                <button class="num-btn" onclick="setNext(1, this)">1</button>
-                <button class="num-btn" onclick="setNext(2, this)">2</button>
-                <button class="num-btn" onclick="setNext(3, this)">3</button>
-                <button class="num-btn" onclick="setNext(4, this)">4</button>
-                <button class="num-btn" onclick="setNext(5, this)">5</button>
-                <button class="num-btn" onclick="setNext(6, this)">6</button>
-                <button class="num-btn" onclick="setNext(7, this)">7</button>
-                <button class="num-btn" onclick="setNext(8, this)">8</button>
-                <button class="num-btn" onclick="setNext(9, this)">9</button>
+                <script>
+                    for(let i=0; i<=9; i++) {
+                        document.write(`<button class="num-btn" id="btn-${i}" onclick="setNextResult(${i})">${i}</button>`);
+                    }
+                </script>
             </div>
-            <button onclick="clearNext()" style="margin-top:15px; width:100%; padding:8px; background:none; border:1px solid red; color:red; border-radius:8px; cursor:pointer;">Reset to Auto</button>
+            <span id="sync-status" class="status-text">Checking Database...</span>
+            <button onclick="clearNext()" style="margin-top:15px; width:100%; padding:10px; background:none; border:1px solid red; color:red; border-radius:8px; cursor:pointer; font-weight:bold;">Reset to Auto (Random)</button>
         </div>
 
         <div class="card">
             <h3><i class="fa-solid fa-bell"></i> Pending Requests</h3>
             <table>
                 <thead>
-                    <tr>
-                        <th>User</th>
-                        <th>Type</th>
-                        <th>Amount</th>
-                        <th>Action</th>
-                    </tr>
+                    <tr><th>User</th><th>Type</th><th>Amount</th><th>Action</th></tr>
                 </thead>
                 <tbody id="request-table">
-                    </tbody>
+                    <tr><td colspan="4" style="text-align:center; color:#555;">No pending requests</td></tr>
+                </tbody>
             </table>
         </div>
-    </div>
-
-    <div class="card">
-        <h3><i class="fa-solid fa-users"></i> Registered Users</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>Phone Number</th>
-                    <th>Balance</th>
-                    <th>Action (Add/Minus)</th>
-                </tr>
-            </thead>
-            <tbody id="user-table">
-                </tbody>
-        </table>
     </div>
 </div>
 
 <script>
-    // --- Firebase Configuration ---
+    // --- Firebase Configuration (আপনার ডাটাবেসের জন্য) ---
     const firebaseConfig = {
         apiKey: "AIzaSyD2It_WJyq3VzjGFE0tqlm_Wac7CHEb2LI",
         authDomain: "bdg-game-35af2.firebaseapp.com",
@@ -113,129 +74,39 @@
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
 
-    // --- Result Hacker Logic (Online) ---
-    function setNext(num, el) {
-        database.ref('gameControl/nextResult').set(num).then(() => {
-            document.querySelectorAll('.num-btn').forEach(b => b.classList.remove('active'));
-            el.classList.add('active');
-            alert("Next result hacked to: " + num);
+    // ১. ডাটাবেস থেকে বর্তমান "Hacked Result" চেক করা
+    database.ref('gameControl/nextResult').on('value', (snapshot) => {
+        const val = snapshot.val();
+        document.querySelectorAll('.num-btn').forEach(b => b.classList.remove('active'));
+        const status = document.getElementById('sync-status');
+        
+        if (val !== null) {
+            document.getElementById('btn-' + val).classList.add('active');
+            status.innerHTML = `<span style="color:#ffc107;">🔥 Next Result is Hacked to: ${val}</span>`;
+        } else {
+            status.innerHTML = `<span style="color:#4caf50;">✅ Running on Auto Mode</span>`;
+        }
+    });
+
+    // ২. এডমিন প্যানেল থেকে রেজাল্ট ডাটাবেসে সেট করা
+    function setNextResult(num) {
+        database.ref('gameControl/nextResult').set(num)
+        .then(() => {
+            console.log("Result set to " + num);
+        })
+        .catch((err) => {
+            alert("Database Error: " + err.message);
         });
     }
 
+    // ৩. রেজাল্ট ক্লিয়ার করা (অটো মুড)
     function clearNext() {
-        database.ref('gameControl/nextResult').remove().then(() => {
-            document.querySelectorAll('.num-btn').forEach(b => b.classList.remove('active'));
-            alert("Result reset to Auto");
+        database.ref('gameControl/nextResult').remove()
+        .then(() => {
+            alert("Success: Game is now back to Auto Mode!");
         });
     }
 
-    // --- Core Admin Logic (Real-time) ---
-    function listenAdminData() {
-        // ১. পেন্ডিং রিকোয়েস্ট দেখা (Online)
-        database.ref('allRequests').on('value', (snapshot) => {
-            const reqTable = document.getElementById('request-table');
-            reqTable.innerHTML = "";
-            const data = snapshot.val();
-            
-            if(!data) {
-                reqTable.innerHTML = "<tr><td colspan='4' style='text-align:center; color:#555;'>No pending requests</td></tr>";
-                return;
-            }
-
-            Object.keys(data).forEach(key => {
-                const req = data[key];
-                if(req.status === 'Pending') {
-                    const badgeClass = req.type === 'Deposit' ? 'bg-deposit' : 'bg-withdraw';
-                    reqTable.innerHTML += `
-                        <tr>
-                            <td>${req.phone}</td>
-                            <td><span class="badge ${badgeClass}">${req.type}</span></td>
-                            <td>₹${req.amount}</td>
-                            <td>
-                                <button class="btn-sm btn-add" onclick="processRequest('${key}', 'Approve')">Approve</button>
-                                <button class="btn-sm btn-reject" onclick="processRequest('${key}', 'Reject')">Reject</button>
-                            </td>
-                        </tr>`;
-                }
-            });
-        });
-
-        // ২. ইউজার লিস্ট দেখা (Online)
-        // দ্রষ্টব্য: আপনার সিস্টেমে ইউজারদের ব্যালেন্স যদি 'users' নোডে সেভ থাকে
-        database.ref('users').on('value', (snapshot) => {
-            const userTable = document.getElementById('user-table');
-            userTable.innerHTML = "";
-            const users = snapshot.val();
-
-            if(!users) {
-                userTable.innerHTML = "<tr><td colspan='3' style='text-align:center;'>No users registered</td></tr>";
-                return;
-            }
-
-            Object.keys(users).forEach(phone => {
-                const userBal = users[phone].balance || 0;
-                userTable.innerHTML += `
-                    <tr>
-                        <td>${phone}</td>
-                        <td>₹${parseFloat(userBal).toFixed(2)}</td>
-                        <td>
-                            <input type="number" id="amt-${phone}" class="action-input" placeholder="0">
-                            <button class="btn-sm btn-add" onclick="manualUpdate('${phone}', 'add')">Add</button>
-                            <button class="btn-sm btn-minus" onclick="manualUpdate('${phone}', 'minus')">Minus</button>
-                        </td>
-                    </tr>`;
-            });
-        });
-    }
-
-    // রিকোয়েস্ট এপ্রুভ বা রিজেক্ট করা
-    function processRequest(key, action) {
-        database.ref('allRequests/' + key).once('value', (snapshot) => {
-            const req = snapshot.val();
-            if(!req) return;
-
-            if(action === 'Approve') {
-                const userRef = database.ref('users/' + req.phone + '/balance');
-                userRef.once('value', (snap) => {
-                    let currentBal = snap.val() || 0;
-                    if(req.type === 'Deposit') {
-                        currentBal += req.amount;
-                    } else {
-                        if(currentBal >= req.amount) currentBal -= req.amount;
-                        else return alert("Insufficient user balance!");
-                    }
-                    
-                    // ১. ব্যালেন্স আপডেট
-                    userRef.set(currentBal);
-                    // ২. স্ট্যাটাস আপডেট
-                    database.ref('allRequests/' + key).update({ status: 'Approved' });
-                    alert("Approved successfully!");
-                });
-            } else {
-                database.ref('allRequests/' + key).update({ status: 'Rejected' });
-                alert("Rejected!");
-            }
-        });
-    }
-
-    // ম্যানুয়ালি ব্যালেন্স কমানো বাড়ানো
-    function manualUpdate(phone, type) {
-        const input = document.getElementById('amt-' + phone);
-        const amt = parseFloat(input.value);
-        if(isNaN(amt) || amt <= 0) return alert("Enter valid amount");
-
-        const userRef = database.ref('users/' + phone + '/balance');
-        userRef.once('value', (snap) => {
-            let currentBal = snap.val() || 0;
-            currentBal = (type === 'add') ? currentBal + amt : currentBal - amt;
-            userRef.set(currentBal).then(() => {
-                alert("Updated!");
-                input.value = "";
-            });
-        });
-    }
-
-    window.onload = listenAdminData;
 </script>
 
 </body>
