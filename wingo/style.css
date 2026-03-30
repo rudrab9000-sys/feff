@@ -1,0 +1,8 @@
+body { background: #222; display: flex; justify-content: center; margin: 0; font-family: sans-serif; color: white; }
+.mobile-frame { width: 375px; height: 100vh; background: #1a1a1a; position: relative; overflow-y: auto; }
+.balance-card { background: linear-gradient(135deg, #d32f2f, #ff5252); margin: 15px; padding: 20px; border-radius: 15px; text-align: center; }
+.timer-box { display: flex; justify-content: space-between; padding: 15px; background: #222; margin: 0 15px; border-radius: 10px; color: #ffc107; }
+.btn { border: none; padding: 15px 25px; border-radius: 30px; color: #fff; font-weight: bold; cursor: pointer; margin: 5px; }
+.green { background: #4caf50; } .red { background: #f44336; } .violet { background: #9c27b0; }
+.modal { display: none; position: fixed; top: 0; width: 375px; height: 100%; background: rgba(0,0,0,0.9); justify-content: center; align-items: center; }
+.m-content { background: white; color: black; padding: 30px; border-radius: 20px; text-align: center; width: 80%; }

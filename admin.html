@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WinGo Master Admin</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+        body { background: #0f0f0f; color: white; padding: 20px; }
+        .admin-wrapper { max-width: 1000px; margin: 0 auto; }
+        h2 { color: #ffc107; margin-bottom: 20px; text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px; }
+
+        /* Grid Layout */
+        .admin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .card { background: #1a1a1a; padding: 20px; border-radius: 15px; border: 1px solid #333; margin-bottom: 20px; }
+
+        /* Result Control */
+        .btn-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-top: 15px; }
+        .num-btn { padding: 10px; border-radius: 8px; border: 1px solid #444; background: #222; color: white; cursor: pointer; font-weight: bold; }
+        .num-btn.active { background: #ffc107; color: black; border-color: #ffc107; }
+
+        /* Tables */
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #333; }
+        th { color: #888; }
+        .action-input { width: 70px; padding: 5px; background: #000; border: 1px solid #444; color: #ffc107; border-radius: 5px; }
+        
+        /* Buttons */
+        .btn-sm { padding: 6px 12px; border-radius: 5px; border: none; cursor: pointer; font-size: 12px; font-weight: bold; }
+        .btn-add { background: #2e7d32; color: white; }
+        .btn-minus { background: #c62828; color: white; }
+        .btn-reject { background: #555; color: white; margin-left: 5px; }
+
+        /* Type Badge */
+        .badge { padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; }
+        .bg-deposit { background: #2e7d32; color: white; }
+        .bg-withdraw { background: #f57c00; color: white; }
+    </style>
+</head>
+<body>
+
+<div class="admin-wrapper">
+    <h2><i class="fa-solid fa-user-shield"></i> BDG Master Admin Panel</h2>
+
+    <div class="admin-grid">
+        <div class="card">
+            <h3><i class="fa-solid fa-gamepad"></i> Next Result Control</h3>
+            <div class="btn-grid">
+                <button class="num-btn" onclick="setNext(0, this)">0</button>
+                <button class="num-btn" onclick="setNext(1, this)">1</button>
+                <button class="num-btn" onclick="setNext(2, this)">2</button>
+                <button class="num-btn" onclick="setNext(3, this)">3</button>
+                <button class="num-btn" onclick="setNext(4, this)">4</button>
+                <button class="num-btn" onclick="setNext(5, this)">5</button>
+                <button class="num-btn" onclick="setNext(6, this)">6</button>
+                <button class="num-btn" onclick="setNext(7, this)">7</button>
+                <button class="num-btn" onclick="setNext(8, this)">8</button>
+                <button class="num-btn" onclick="setNext(9, this)">9</button>
+            </div>
+            <button onclick="clearNext()" style="margin-top:15px; width:100%; padding:8px; background:none; border:1px solid red; color:red; border-radius:8px; cursor:pointer;">Reset to Auto</button>
+        </div>
+
+        <div class="card">
+            <h3><i class="fa-solid fa-bell"></i> Pending Requests</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>User</th>
+                        <th>Type</th>
+                        <th>Amount</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="request-table">
+                    </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3><i class="fa-solid fa-users"></i> Registered Users</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Phone Number</th>
+                    <th>Balance</th>
+                    <th>Action (Add/Minus)</th>
+                </tr>
+            </thead>
+            <tbody id="user-table">
+                </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    // --- Result Hacker Logic ---
+    function setNext(num, el) {
+        localStorage.setItem('nextResult', num);
+        document.querySelectorAll('.num-btn').forEach(b => b.classList.remove('active'));
+        el.classList.add('active');
+        alert("Next result hacked to: " + num);
+    }
+
+    function clearNext() {
+        localStorage.removeItem('nextResult');
+        document.querySelectorAll('.num-btn').forEach(b => b.classList.remove('active'));
+        alert("Result reset to Auto");
+    }
+
+    // --- Core Admin Logic ---
+    function loadAdminData() {
+        const user = JSON.parse(localStorage.getItem('userData'));
+        const bal = localStorage.getItem('bal') || "0";
+        
+        // Load User Table
+        const userTable = document.getElementById('user-table');
+        if(user) {
+            userTable.innerHTML = `
+                <tr>
+                    <td>${user.phone}</td>
+                    <td>₹${parseFloat(bal).toFixed(2)}</td>
+                    <td>
+                        <input type="number" id="manual-amt" class="action-input" placeholder="0">
+                        <button class="btn-sm btn-add" onclick="manualUpdate('add')">Add</button>
+                        <button class="btn-sm btn-minus" onclick="manualUpdate('minus')">Minus</button>
+                    </td>
+                </tr>`;
+        } else {
+            userTable.innerHTML = "<tr><td colspan='3' style='text-align:center;'>No users registered</td></tr>";
+        }
+
+        // Load Pending Requests
+        const reqTable = document.getElementById('request-table');
+        let requests = JSON.parse(localStorage.getItem('allRequests') || "[]");
+        reqTable.innerHTML = "";
+
+        if(requests.length === 0) {
+            reqTable.innerHTML = "<tr><td colspan='4' style='text-align:center; color:#555;'>No pending requests</td></tr>";
+        }
+
+        requests.forEach((req) => {
+            const badgeClass = req.type === 'Deposit' ? 'bg-deposit' : 'bg-withdraw';
+            reqTable.innerHTML += `
+                <tr>
+                    <td>${req.phone}</td>
+                    <td><span class="badge ${badgeClass}">${req.type}</span></td>
+                    <td>₹${req.amount}</td>
+                    <td>
+                        <button class="btn-sm btn-add" onclick="processRequest(${req.id}, 'Approve')">Approve</button>
+                        <button class="btn-sm btn-reject" onclick="processRequest(${req.id}, 'Reject')">Reject</button>
+                    </td>
+                </tr>`;
+        });
+    }
+
+    // Process Deposit/Withdraw Requests
+    function processRequest(id, action) {
+        let requests = JSON.parse(localStorage.getItem('allRequests') || "[]");
+        let currentBal = parseFloat(localStorage.getItem('bal') || 0);
+        let target = requests.find(r => r.id === id);
+
+        if(!target) return;
+
+        if(action === 'Approve') {
+            if(target.type === 'Deposit') {
+                currentBal += target.amount;
+                alert("Deposit Approved! ₹" + target.amount + " added.");
+            } else {
+                if(currentBal >= target.amount) {
+                    currentBal -= target.amount;
+                    alert("Withdrawal Approved! ₹" + target.amount + " deducted.");
+                } else {
+                    alert("User has insufficient balance now!");
+                    return;
+                }
+            }
+            localStorage.setItem('bal', currentBal);
+        } else {
+            alert("Request Rejected!");
+        }
+
+        // Remove from list after action
+        let updatedRequests = requests.filter(r => r.id !== id);
+        localStorage.setItem('allRequests', JSON.stringify(updatedRequests));
+        loadAdminData();
+    }
+
+    // Manual Add/Minus from User Table
+    function manualUpdate(type) {
+        const amt = parseFloat(document.getElementById('manual-amt').value);
+        if(isNaN(amt) || amt <= 0) return alert("Enter valid amount");
+        
+        let currentBal = parseFloat(localStorage.getItem('bal') || 0);
+        if(type === 'add') currentBal += amt;
+        else currentBal -= amt;
+
+        localStorage.setItem('bal', currentBal);
+        document.getElementById('manual-amt').value = "";
+        loadAdminData();
+        alert("Balance Updated!");
+    }
+
+    // Auto-refresh data every 3 seconds
+    window.onload = loadAdminData;
+    setInterval(loadAdminData, 3000);
+</script>
+
+</body>
+</html>

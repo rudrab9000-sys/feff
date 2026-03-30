@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wallet - BDG Game</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+        body { background-color: #1a1a1a; display: flex; justify-content: center; color: white; }
+        .app-container { width: 375px; background: #111; min-height: 100vh; padding-bottom: 80px; position: relative; }
+
+        /* Header */
+        .top-header { padding: 15px; background: #222; display: flex; align-items: center; border-bottom: 1px solid #333; position: sticky; top:0; z-index: 10; }
+        .top-header i { font-size: 20px; color: #ffc107; cursor: pointer; margin-right: 15px; }
+        .top-header h3 { font-size: 18px; flex: 1; text-align: center; margin-right: 35px; }
+
+        /* Balance Card */
+        .balance-card { margin: 20px; padding: 25px; background: linear-gradient(135deg, #d32f2f, #ff5252); border-radius: 20px; text-align: center; box-shadow: 0 10px 20px rgba(211,47,47,0.3); }
+        .balance-card p { font-size: 13px; opacity: 0.9; margin-bottom: 5px; }
+        .balance-card h1 { font-size: 32px; font-weight: 800; }
+
+        /* Action Buttons */
+        .wallet-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 0 20px; }
+        .btn { padding: 15px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 8px; transition: 0.3s; font-size: 15px; }
+        .btn-deposit { background: #2e7d32; color: white; }
+        .btn-withdraw { background: #ffc107; color: black; }
+        .btn:active { transform: scale(0.95); }
+
+        /* History Section */
+        .history-section { margin-top: 30px; padding: 0 20px; }
+        .history-section h4 { font-size: 16px; margin-bottom: 15px; color: #ffc107; display: flex; align-items: center; gap: 10px; }
+        .history-table { width: 100%; border-collapse: collapse; background: #1a1a1a; border-radius: 10px; overflow: hidden; font-size: 12px; }
+        .history-table th { background: #222; padding: 12px; text-align: left; color: #888; }
+        .history-table td { padding: 12px; border-bottom: 1px solid #222; }
+        
+        /* Status Colors (ডিলিট হবে না, শুধু কালার চেঞ্জ হবে) */
+        .status-pending { color: #ffc107; font-weight: bold; }
+        .status-approved { color: #4caf50; font-weight: bold; }
+        .status-rejected { color: #f44336; font-weight: bold; }
+
+        /* Form Modal */
+        #action-form { margin: 20px; padding: 20px; background: #222; border-radius: 15px; border: 1px solid #444; display: none; }
+        #action-form h4 { margin-bottom: 15px; color: #ffc107; }
+        #action-form input { width: 100%; padding: 12px; margin-bottom: 15px; background: #111; border: 1px solid #444; color: white; border-radius: 8px; outline: none; }
+        #action-form button { width: 100%; padding: 12px; background: #ffc107; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+
+        /* Bottom Nav */
+        .bottom-nav { position: fixed; bottom: 0; width: 375px; background: #222; display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #333; }
+        .nav-item { text-align: center; color: #888; text-decoration: none; font-size: 11px; flex: 1; }
+        .nav-item.active { color: #ffc107; }
+        .nav-item i { font-size: 22px; margin-bottom: 4px; display: block; }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <header class="top-header">
+            <i class="fa-solid fa-chevron-left" onclick="history.back()"></i>
+            <h3>Wallet</h3>
+        </header>
+
+        <div class="balance-card">
+            <p>Available Balance</p>
+            <h1>₹ <span id="wall-bal">0.00</span></h1>
+        </div>
+
+        <div class="wallet-actions">
+            <button class="btn btn-deposit" onclick="showForm('Deposit')">
+                <i class="fa-solid fa-plus-circle"></i> Deposit
+            </button>
+            <button class="btn btn-withdraw" onclick="showForm('Withdraw')">
+                <i class="fa-solid fa-minus-circle"></i> Withdraw
+            </button>
+        </div>
+
+        <div id="action-form">
+            <h4 id="form-title">Request</h4>
+            <input type="number" id="req-amount" placeholder="Enter Amount (Min ₹100)">
+            <input type="text" id="req-info" placeholder="Details">
+            <button onclick="submitRequest()">Submit Request</button>
+            <p onclick="closeForm()" style="text-align:center; font-size:12px; margin-top:10px; cursor:pointer; color:#888;">Cancel</p>
+        </div>
+
+        <div class="history-section">
+            <h4><i class="fa-solid fa-clock-rotate-left"></i> Recent History</h4>
+            <table class="history-table">
+                <thead>
+                    <tr>
+                        <th>Type</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="history-list">
+                    </tbody>
+            </table>
+        </div>
+
+        <nav class="bottom-nav">
+            <a href="../lobby/index.html" class="nav-item"><i class="fa-solid fa-house"></i>Home</a>
+            <a href="../activity/index.html" class="nav-item"><i class="fa-solid fa-gift"></i>Activity</a>
+            <a href="index.html" class="nav-item active"><i class="fa-solid fa-wallet"></i>Wallet</a>
+            <a href="../account/index.html" class="nav-item"><i class="fa-solid fa-user"></i>Account</a>
+        </nav>
+    </div>
+
+    <script>
+        let currentAction = "";
+
+        // ডাটা লোড করার ফাংশন
+        function loadWalletData() {
+            // ব্যালেন্স আপডেট
+            let bal = localStorage.getItem('bal') || "0.00";
+            document.getElementById('wall-bal').innerText = parseFloat(bal).toFixed(2);
+
+            // হিস্ট্রি টেবিল লোড
+            const historyList = document.getElementById('history-list');
+            let requests = JSON.parse(localStorage.getItem('allRequests') || "[]");
+            
+            historyList.innerHTML = "";
+            if(requests.length === 0) {
+                historyList.innerHTML = "<tr><td colspan='3' style='text-align:center; color:#555;'>No history found</td></tr>";
+            }
+
+            // নতুন রিকোয়েস্টগুলো উপরে দেখানোর জন্য reverse() ব্যবহার করা হয়েছে
+            requests.slice().reverse().forEach(req => {
+                let statusClass = "";
+                
+                // স্ট্যাটাস অনুযায়ী ডাইনামিক ক্লাস সেট (Approved/Rejected হলেও ডিলিট হবে না)
+                if(req.status === 'Pending') statusClass = "status-pending";
+                else if(req.status === 'Approved') statusClass = "status-approved";
+                else if(req.status === 'Rejected') statusClass = "status-rejected";
+
+                historyList.innerHTML += `
+                    <tr>
+                        <td>${req.type}</td>
+                        <td>₹${req.amount}</td>
+                        <td class="${statusClass}">${req.status}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        function showForm(type) {
+            currentAction = type;
+            document.getElementById('action-form').style.display = 'block';
+            document.getElementById('form-title').innerText = type + " Request";
+            document.getElementById('req-info').placeholder = (type === 'Deposit') ? "Transaction ID" : "UPI ID / Bank Detail";
+        }
+
+        function closeForm() {
+            document.getElementById('action-form').style.display = 'none';
+        }
+
+        function submitRequest() {
+            const amt = parseFloat(document.getElementById('req-amount').value);
+            const info = document.getElementById('req-info').value;
+            const user = JSON.parse(localStorage.getItem('userData'));
+            const currentBal = parseFloat(localStorage.getItem('bal') || 0);
+
+            if(!user) return alert("Please Login!");
+            if(isNaN(amt) || amt < 100) return alert("Minimum amount is ₹100!");
+            if(currentAction === 'Withdraw' && amt > currentBal) return alert("Insufficient balance!");
+            if(info.length < 5) return alert("Enter valid details!");
+
+            let requests = JSON.parse(localStorage.getItem('allRequests') || "[]");
+            
+            let newReq = {
+                id: Date.now(),
+                phone: user.phone,
+                type: currentAction,
+                amount: amt,
+                bankInfo: info,
+                status: 'Pending'
+            };
+
+            requests.push(newReq);
+            localStorage.setItem('allRequests', JSON.stringify(requests));
+
+            alert(currentAction + " Request Sent Successfully! ⏳");
+            closeForm();
+            loadWalletData(); 
+        }
+
+        window.onload = loadWalletData;
+        
+        // ৩ সেকেন্ড পর পর অটো রিফ্রেশ হবে যাতে স্ট্যাটাস আপডেট দেখা যায়
+        setInterval(loadWalletData, 3000);
+    </script>
+</body>
+</html>

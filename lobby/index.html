@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BDG Official - Home</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.css" />
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+        body { background-color: #1a1a1a; color: white; display: flex; justify-content: center; overflow-x: hidden; }
+        .app-container { width: 375px; background-color: #111; min-height: 100vh; padding-bottom: 80px; position: relative; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
+
+        /* Header */
+        .top-header { padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; background: #222; position: sticky; top: 0; z-index: 100; border-bottom: 1px solid #333; }
+        .logo { font-size: 22px; font-weight: 800; color: #d32f2f; text-decoration: none; display: flex; align-items: center; gap: 5px; }
+        .logo span { color: #ffc107; }
+
+        /* Banner (Using Gradients + Emoji) */
+        .banner-section { width: 100%; height: 160px; margin-top: 5px; }
+        .swiper-slide { display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; color: white; text-align: center; }
+        .slide1 { background: linear-gradient(135deg, #1d2b64, #f8cdda); }
+        .slide2 { background: linear-gradient(135deg, #00b09b, #96c93d); }
+        .slide3 { background: linear-gradient(135deg, #833ab4, #fd1d1d, #fcb045); }
+        .banner-icon { font-size: 50px; margin-bottom: 10px; }
+
+        /* Wallet Bar */
+        .wallet-bar { margin: 15px; background: linear-gradient(90deg, #d32f2f, #ff5252); padding: 18px; border-radius: 15px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 5px 15px rgba(211,47,47,0.4); }
+        .wallet-bar h2 { font-size: 24px; letter-spacing: 1px; font-weight: 800; }
+
+        /* Category Slider (Animated) */
+        .category-slider { padding: 15px 10px; display: flex; gap: 12px; overflow-x: auto; scrollbar-width: none; background: #1a1a1a; border-bottom: 1px solid #333; }
+        .category-slider::-webkit-scrollbar { display: none; }
+        .cat-item { min-width: 90px; text-align: center; cursor: pointer; opacity: 0.5; transition: 0.3s; padding-bottom: 5px; }
+        .cat-item.active { opacity: 1; transform: scale(1.05); color: #ffc107; border-bottom: 3px solid #ffc107; }
+        .cat-icon { font-size: 28px; margin-bottom: 5px; display: block; }
+        .cat-item span { font-size: 12px; font-weight: bold; }
+
+        /* Game Grid */
+        .game-grid { padding: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .game-card { background: #222; border-radius: 15px; overflow: hidden; border: 1px solid #333; transition: 0.3s; position: relative; box-shadow: 0 4px 10px rgba(0,0,0,0.5); text-decoration: none; color: white; display: flex; flex-direction: column; align-items: center; padding: 20px 10px; text-align: center; height: 160px; justify-content: center; }
+        .game-card:active { transform: scale(0.96); border-color: #ffc107; }
+        .game-emoji { font-size: 55px; margin-bottom: 15px; display: block; }
+        .game-info h4 { font-size: 14px; font-weight: bold; margin-bottom: 2px; color: white; }
+        .game-info p { font-size: 10px; color: #aaa; }
+        .hot-tag { position: absolute; top: 0; left: 0; background: linear-gradient(to right, #ff0000, #ff5f6d); color: white; font-size: 9px; padding: 2px 10px; border-radius: 0 0 12px 0; font-weight: bold; z-index: 2; }
+
+        /* Specific Game Backgrounds */
+        .g-wingo { background: linear-gradient(135deg, #1d3557, #457b9d); }
+        .g-aviator { background: linear-gradient(135deg, #f1faee, #a8dadc); color: #1d3557; }
+        .g-chicken { background: linear-gradient(135deg, #f48c06, #f9c74f); color: #222; }
+        .g-fortune { background: linear-gradient(135deg, #2a9d8f, #81b29a); }
+
+        /* Bottom Navigation */
+        .bottom-nav { position: fixed; bottom: 0; width: 375px; background: #1a1a1a; display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #333; z-index: 1000; box-shadow: 0 -5px 15px rgba(0,0,0,0.5); }
+        .nav-item { text-align: center; color: #888; text-decoration: none; font-size: 11px; flex: 1; transition: 0.3s; }
+        .nav-item.active { color: #ffc107; }
+        .nav-item i { font-size: 22px; margin-bottom: 5px; display: block; }
+
+        /* Notice Bar */
+        .notice-bar { background: #252525; padding: 10px 15px; font-size: 12px; display: flex; align-items: center; color: #ffc107; border-bottom: 1px solid #333; }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <header class="top-header">
+            <a href="#" class="logo">BDG <span>GAME</span></a>
+            <div style="display: flex; gap: 20px; color: #ffc107; font-size: 18px;">
+                <i class="fa-solid fa-headset"></i>
+                <i class="fa-solid fa-bell"></i>
+            </div>
+        </header>
+
+        <div class="swiper banner-section">
+            <div class="swiper-wrapper">
+                <div class="swiper-slide slide1">
+                    <span class="banner-icon">🎲</span>
+                    <h3>Lottery Special</h3>
+                    <p>Predict & Win Big Rewards Daily</p>
+                </div>
+                <div class="swiper-slide slide2">
+                    <span class="banner-icon">✈️</span>
+                    <h3>High Multiplier</h3>
+                    <p>Catch the Lucky Jet Now</p>
+                </div>
+                <div class="swiper-slide slide3">
+                    <span class="banner-icon">💰</span>
+                    <h3>Lucky Slots</h3>
+                    <p>Spin the Wheel and Win Gems</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="notice-bar">
+            <i class="fa-solid fa-volume-high" style="margin-right:10px;"></i>
+            <marquee>Welcome to BDG Game! Play WinGo, Aviator, Slots and win rewards daily. Fast withdrawal 24/7.</marquee>
+        </div>
+
+        <div class="wallet-bar">
+            <div>
+                <p style="font-size: 12px; opacity: 0.9;">Total Balance</p>
+                <h2>₹ <span id="lob-bal">0.00</span></h2>
+            </div>
+            <button onclick="handleDepositClick()" style="background: white; color: #d32f2f; border: none; padding: 10px 20px; border-radius: 25px; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.2); cursor: pointer;">Deposit</button>
+        </div>
+
+        <div class="category-slider">
+            <div class="cat-item lottery active" onclick="switchCat('lottery', this)"><span class="cat-icon">🍀</span><span>Lottery</span></div>
+            <div class="cat-item original" onclick="switchCat('original', this)"><span class="cat-icon">🚀</span><span>Original</span></div>
+            <div class="cat-item slots" onclick="switchCat('slots', this)"><span class="cat-icon">🎰</span><span>Slots</span></div>
+            <div class="cat-item video" onclick="switchCat('video', this)"><span class="cat-icon">🎥</span><span>Video</span></div>
+        </div>
+
+        <div class="game-grid" id="game-display">
+            <a href="../wingo/index.html" class="game-card lottery original g-wingo">
+                <div class="hot-tag">HOT</div>
+                <span class="game-emoji">🎰</span>
+                <div class="game-info"><h4>WinGo 30s</h4><p>Color Prediction</p></div>
+            </a>
+
+            <div class="game-card original g-aviator">
+                <span class="game-emoji">✈️</span>
+                <div class="game-info"><h4>Aviator</h4><p>Multiplayer multiplier</p></div>
+            </div>
+
+            <div class="game-card original g-chicken">
+                <span class="game-emoji">🐔</span>
+                <div class="game-info"><h4>Chicken</h4><p>Classic fun game</p></div>
+            </div>
+
+            <div class="game-card slots g-fortune">
+                <span class="game-emoji">💎</span>
+                <div class="game-info"><h4>Gems slots</h4><p>Big payout potential</p></div>
+            </div>
+        </div>
+
+        <nav class="bottom-nav">
+            <a href="index.html" class="nav-item active"><i class="fa-solid fa-house"></i>Home</a>
+            <a href="../activity/index.html" class="nav-item"><i class="fa-solid fa-trophy"></i>Activity</a>
+            <a href="../wallet/index.html" class="nav-item"><i class="fa-solid fa-wallet"></i>Wallet</a>
+            <a href="../account/index.html" class="nav-item"><i class="fa-solid fa-user"></i>Account</a>
+        </nav>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.js"></script>
+    <script>
+        // Banner Slider Logic
+        new Swiper('.banner-section', {
+            loop: true,
+            autoplay: { delay: 3000 },
+        });
+
+        // --- BDG Logic: Balance & Deposit Request ---
+
+        function refreshLobbyData() {
+            let bal = localStorage.getItem('bal') || "0.00";
+            document.getElementById('lob-bal').innerText = parseFloat(bal).toFixed(2);
+        }
+
+        function handleDepositClick() {
+            let amount = prompt("Enter Deposit Amount (₹):", "500");
+            if (amount === null || amount === "" || isNaN(amount)) return;
+
+            let user = JSON.parse(localStorage.getItem('userData'));
+            if(!user) {
+                alert("Please login first!");
+                location.href="../auth/login.html";
+                return;
+            }
+
+            // রিকোয়েস্ট তৈরি করা
+            let requests = JSON.parse(localStorage.getItem('allRequests') || "[]");
+            let newReq = {
+                id: Date.now(),
+                phone: user.phone,
+                type: 'Deposit',
+                amount: parseFloat(amount),
+                status: 'Pending'
+            };
+
+            requests.push(newReq);
+            localStorage.setItem('allRequests', JSON.stringify(requests));
+            
+            alert("Deposit Request of ₹" + amount + " sent to Admin for approval! ⏳");
+        }
+
+        // ক্যাটাগরি সুইচিং লজিক
+        function switchCat(cat, el) {
+            document.querySelectorAll('.cat-item').forEach(item => item.classList.remove('active'));
+            el.classList.add('active');
+            const games = document.querySelectorAll('.game-card');
+            games.forEach(g => {
+                if (cat === 'all' || g.classList.contains(cat)) {
+                    g.style.display = 'flex';
+                } else {
+                    g.style.display = 'none';
+                }
+            });
+        }
+
+        // পেজ লোড হলে ডাটা আপডেট করো
+        window.onload = refreshLobbyData;
+        // প্রতি ২ সেকেন্ড পর পর ব্যালেন্স চেক করবে (যদি এডমিন প্যানেল থেকে চেঞ্জ হয়)
+        setInterval(refreshLobbyData, 2000);
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - BDG Game</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* CSS stays same as Login for consistency */
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+        body { background-color: #1a1a1a; display: flex; justify-content: center; min-height: 100vh; color: white; }
+        .auth-container { width: 375px; background: #111; padding: 30px 20px; position: relative; }
+        .back-btn { font-size: 20px; color: #ffc107; cursor: pointer; text-decoration: none; }
+        .auth-header { margin: 40px 0; text-align: left; }
+        .auth-header h1 { font-size: 28px; color: #ffc107; }
+        .auth-header p { color: #888; font-size: 14px; margin-top: 5px; }
+        .input-group { margin-bottom: 20px; position: relative; }
+        .input-group i { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #ffc107; }
+        .input-group input { width: 100%; padding: 15px 15px 15px 45px; background: #222; border: 1px solid #333; border-radius: 12px; color: white; outline: none; }
+        .auth-btn { width: 100%; padding: 15px; background: linear-gradient(90deg, #ffc107, #ff9800); border: none; border-radius: 30px; color: #000; font-weight: bold; cursor: pointer; }
+        .switch-auth { text-align: center; margin-top: 25px; font-size: 14px; color: #aaa; }
+        .switch-auth a { color: #ffc107; text-decoration: none; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div class="auth-container">
+        <a href="login.html" class="back-btn"><i class="fa-solid fa-chevron-left"></i></a>
+        
+        <div class="auth-header">
+            <h1>Register 📝</h1>
+            <p>Create a new account to play</p>
+        </div>
+
+        <div class="input-group">
+            <i class="fa-solid fa-phone"></i>
+            <input type="number" id="reg-phone" placeholder="Phone Number">
+        </div>
+
+        <div class="input-group">
+            <i class="fa-solid fa-lock"></i>
+            <input type="password" id="reg-pass" placeholder="Set Password">
+        </div>
+
+        <div class="input-group">
+            <i class="fa-solid fa-user-plus"></i>
+            <input type="text" id="invite-code" placeholder="Invite Code (Optional)">
+        </div>
+
+        <button class="auth-btn" onclick="handleRegister()">Register Now</button>
+
+        <div class="switch-auth">
+            Already have an account? <a href="login.html">Login here</a>
+        </div>
+    </div>
+
+    <script>
+        function handleRegister() {
+            const phone = document.getElementById('reg-phone').value;
+            const pass = document.getElementById('reg-pass').value;
+
+            if(phone.length < 10 || pass.length < 4) {
+                alert("Please enter valid details!");
+                return;
+            }
+
+            const userData = { phone: phone, pass: pass, bal: 1000.00 };
+            localStorage.setItem('userData', JSON.stringify(userData));
+            localStorage.setItem('bal', 1000.00); // Initial Bonus
+
+            alert("Registration Successful! 🎁 Welcome bonus ₹1000 added.");
+            location.href = "login.html";
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,5 @@
+body { background: #111; display: flex; justify-content: center; margin: 0; font-family: sans-serif; }
+.mobile-frame { width: 375px; height: 100vh; background: #f4f4f4; position: relative; }
+.header { background: #fff; padding: 15px; font-weight: bold; color: #d32f2f; text-align: center; border-bottom: 2px solid #eee; }
+.banner { background: linear-gradient(135deg, #d32f2f, #ff5252); margin: 15px; padding: 30px; border-radius: 15px; color: white; text-align: center; }
+.card { background: linear-gradient(135deg, #4facfe, #00f2fe); margin: 15px; padding: 25px; border-radius: 15px; color: white; display: flex; justify-content: space-between; align-items: center; cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }

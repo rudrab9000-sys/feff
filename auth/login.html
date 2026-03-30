@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - BDG Game</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #1a1a1a; display: flex; justify-content: center; min-height: 100vh; color: white; }
+        .auth-container { width: 375px; background: #111; padding: 30px 20px; border-radius: 10px; }
+        .back-btn { font-size: 20px; color: #ffc107; cursor: pointer; text-decoration: none; display: inline-block; margin-bottom: 20px; }
+        .auth-header h1 { font-size: 28px; color: #ffc107; margin-bottom: 5px; }
+        .auth-header p { color: #888; font-size: 14px; margin-bottom: 30px; }
+        .input-group { margin-bottom: 20px; position: relative; }
+        .input-group i { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #ffc107; }
+        .input-group input { width: 100%; padding: 15px 15px 15px 45px; background: #222; border: 1px solid #333; border-radius: 12px; color: white; outline: none; }
+        .input-group input:focus { border-color: #ffc107; }
+        .auth-btn { width: 100%; padding: 15px; background: linear-gradient(90deg, #ffc107, #ff9800); border: none; border-radius: 30px; color: #000; font-weight: bold; font-size: 16px; cursor: pointer; margin-top: 10px; }
+        .switch-auth { text-align: center; margin-top: 25px; font-size: 14px; color: #aaa; }
+        .switch-auth a { color: #ffc107; text-decoration: none; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <a href="../lobby/index.html" class="back-btn"><i class="fa-solid fa-chevron-left"></i></a>
+        <div class="auth-header">
+            <h1>Login 🔐</h1>
+            <p>Enter your details to play</p>
+        </div>
+        <div class="input-group">
+            <i class="fa-solid fa-phone"></i>
+            <input type="number" id="login-phone" placeholder="Phone Number">
+        </div>
+        <div class="input-group">
+            <i class="fa-solid fa-lock"></i>
+            <input type="password" id="login-pass" placeholder="Password">
+        </div>
+        <button class="auth-btn" onclick="handleLogin()">Login</button>
+        <div class="switch-auth">
+            Don't have an account? <a href="register.html">Register Now</a>
+        </div>
+    </div>
+    <script>
+        function handleLogin() {
+            const phone = document.getElementById('login-phone').value;
+            const pass = document.getElementById('login-pass').value;
+            const savedUser = JSON.parse(localStorage.getItem('userData'));
+            if(savedUser && savedUser.phone === phone && savedUser.pass === pass) {
+                alert("Login Successful! 🎉");
+                location.href = "../lobby/index.html";
+            } else {
+                alert("Invalid Phone or Password! ❌");
+            }
+        }
+    </script>
+</body>
+</html>

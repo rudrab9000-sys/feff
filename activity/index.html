@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Activity - BDG Game</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+        body { background-color: #1a1a1a; display: flex; justify-content: center; color: white; }
+        .app-container { width: 375px; background: #111; min-height: 100vh; padding-bottom: 90px; }
+
+        /* Header */
+        .top-header { padding: 15px; background: #222; text-align: center; border-bottom: 1px solid #333; position: sticky; top: 0; z-index: 100; }
+        .top-header h3 { font-size: 18px; color: #ffc107; }
+
+        /* Banner Card */
+        .activity-banner { margin: 15px; background: linear-gradient(135deg, #6a11cb, #2575fc); padding: 30px 20px; border-radius: 15px; text-align: center; box-shadow: 0 10px 20px rgba(37, 117, 252, 0.3); }
+        .activity-banner h2 { font-size: 24px; margin-bottom: 10px; }
+        .activity-banner p { font-size: 13px; opacity: 0.9; }
+
+        /* Gift Code Section */
+        .gift-section { margin: 20px 15px; background: #222; padding: 20px; border-radius: 15px; border: 1px solid #333; }
+        .gift-section h4 { margin-bottom: 15px; font-size: 16px; color: #ffc107; display: flex; align-items: center; gap: 10px; }
+        .gift-input-group { position: relative; }
+        .gift-input-group input { width: 100%; padding: 15px; background: #111; border: 1px solid #444; border-radius: 10px; color: white; outline: none; margin-bottom: 15px; font-size: 14px; }
+        .gift-input-group input:focus { border-color: #ffc107; }
+        .receive-btn { width: 100%; padding: 12px; background: #ffc107; border: none; border-radius: 25px; color: black; font-weight: bold; cursor: pointer; font-size: 15px; box-shadow: 0 5px 15px rgba(255, 193, 7, 0.2); }
+
+        /* Activity Cards List */
+        .activity-list { padding: 0 15px; }
+        .activity-card { background: #222; padding: 15px; border-radius: 12px; margin-bottom: 10px; display: flex; align-items: center; gap: 15px; border: 1px solid #333; }
+        .act-icon { font-size: 25px; background: #333; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; border-radius: 12px; }
+        .act-info h5 { font-size: 14px; margin-bottom: 4px; }
+        .act-info p { font-size: 11px; color: #888; }
+
+        /* Bottom Nav */
+        .bottom-nav { position: fixed; bottom: 0; width: 375px; background: #222; display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #333; z-index: 1000; }
+        .nav-item { text-align: center; color: #888; text-decoration: none; font-size: 11px; flex: 1; }
+        .nav-item.active { color: #ffc107; }
+        .nav-item i { font-size: 22px; margin-bottom: 4px; display: block; }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <header class="top-header">
+            <h3>Activity Center</h3>
+        </header>
+
+        <div class="activity-banner">
+            <h2>🎁 Activity Rewards</h2>
+            <p>Participate in activities and win big prizes!</p>
+        </div>
+
+        <div class="gift-section">
+            <h4><i class="fa-solid fa-gift"></i> Gift Code</h4>
+            <div class="gift-input-group">
+                <input type="text" id="gift-code" placeholder="Please enter the gift code">
+                <button class="receive-btn" onclick="redeemGift()">Receive Reward</button>
+            </div>
+        </div>
+
+        <div class="activity-list">
+            <div class="activity-card">
+                <div class="act-icon">💰</div>
+                <div class="act-info">
+                    <h5>Daily Check-in Bonus</h5>
+                    <p>Claim your daily rewards for logging in.</p>
+                </div>
+            </div>
+            <div class="activity-card">
+                <div class="act-icon">👥</div>
+                <div class="act-info">
+                    <h5>Invite Friends</h5>
+                    <p>Invite your friends and earn commissions.</p>
+                </div>
+            </div>
+            <div class="activity-card">
+                <div class="act-icon">⭐</div>
+                <div class="act-info">
+                    <h5>Betting Rebate</h5>
+                    <p>Get a percentage of your bets back daily.</p>
+                </div>
+            </div>
+        </div>
+
+        <nav class="bottom-nav">
+            <a href="../lobby/index.html" class="nav-item"><i class="fa-solid fa-house"></i>Home</a>
+            <a href="index.html" class="nav-item active"><i class="fa-solid fa-gift"></i>Activity</a>
+            <a href="../wallet/index.html" class="nav-item"><i class="fa-solid fa-wallet"></i>Wallet</a>
+            <a href="../account/index.html" class="nav-item"><i class="fa-solid fa-user"></i>Account</a>
+        </nav>
+    </div>
+
+    <script>
+        function redeemGift() {
+            const code = document.getElementById('gift-code').value;
+            if(code === "BDG777") { // ডেমো গিফট কোড
+                let currentBal = parseFloat(localStorage.getItem('bal') || 0);
+                currentBal += 500;
+                localStorage.setItem('bal', currentBal);
+                alert("🎉 Congratulations! ₹500 added to your wallet.");
+                document.getElementById('gift-code').value = "";
+            } else if(code === "") {
+                alert("Please enter a code!");
+            } else {
+                alert("❌ Invalid Gift Code!");
+            }
+        }
+    </script>
+</body>
+</html>

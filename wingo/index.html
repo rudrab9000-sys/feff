@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WinGo Ultimate Live - BDG</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+        body { background-color: #333; display: flex; justify-content: center; min-height: 100vh; }
+        .wrapper { width: 375px; background-color: #1a1a1a; color: white; height: 100vh; overflow-y: auto; position: relative; scrollbar-width: none; }
+        
+        .header { background: #222; padding: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; position: sticky; top: 0; z-index: 10; }
+        .balance-card { background: linear-gradient(135deg, #d32f2f, #ff5252); margin: 15px; border-radius: 15px; padding: 20px; text-align: center; box-shadow: 0 8px 20px rgba(211,47,47,0.3); }
+        
+        .timer-container { background: #222; margin: 15px; border-radius: 12px; padding: 15px; display: flex; justify-content: space-between; border: 1px solid #333; }
+        .time-display { font-size: 28px; font-weight: bold; color: #ffc107; }
+        .lockdown { color: #f44336 !important; animation: blink 0.8s infinite; }
+        @keyframes blink { 50% { opacity: 0.3; } }
+
+        .color-btns { display: flex; justify-content: space-around; padding: 10px 15px; }
+        .c-btn { border: none; padding: 12px; border-radius: 5px 20px; color: white; font-weight: bold; cursor: pointer; width: 30%; font-size: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        .green { background: #4caf50; } .violet { background: #9c27b0; } .red { background: #f44336; }
+        .c-btn:disabled, .num-btn:disabled, .s-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        .number-grid { background: #222; margin: 15px; padding: 15px; border-radius: 12px; display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+        .num-btn { background: #333; border: 2px solid #444; border-radius: 50%; width: 55px; height: 55px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #fff; font-weight: bold; font-size: 18px; }
+        .n0, .n5 { border-color: #9c27b0; color: #9c27b0; }
+        .n1, .n3, .n7, .n9 { border-color: #4caf50; color: #4caf50; }
+        .n2, .n4, .n6, .n8 { border-color: #f44336; color: #f44336; }
+
+        .size-btns { display: flex; justify-content: space-around; padding: 10px 15px; }
+        .s-btn { border: none; padding: 12px; border-radius: 20px 5px; color: white; font-weight: bold; cursor: pointer; width: 45%; font-size: 16px; }
+        .big { background: #ffa000; } .small { background: #3a7bd5; }
+
+        .modal { display: none; position: fixed; top: 0; width: 375px; height: 100%; background: rgba(0,0,0,0.85); justify-content: center; align-items: flex-end; z-index: 100; }
+        .modal-box { background: white; color: black; width: 100%; border-radius: 30px 30px 0 0; padding: 25px; animation: slideUp 0.3s ease-out; }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        .custom-input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 10px; margin-bottom: 10px; font-size: 18px; text-align: center; font-weight: bold; }
+
+        .history-section { background: #222; margin-top: 20px; border-radius: 20px 20px 0 0; padding: 10px; min-height: 400px; }
+        .tabs { display: flex; border-bottom: 1px solid #333; margin-bottom: 10px; }
+        .tab { flex: 1; text-align: center; padding: 15px; color: #888; font-weight: bold; cursor: pointer; }
+        .tab.active { color: #ffc107; border-bottom: 3px solid #ffc107; }
+        table { width: 100%; color: #ccc; text-align: center; font-size: 12px; border-collapse: collapse; }
+        td, th { padding: 12px 5px; border-bottom: 1px solid #2a2a2a; }
+        .processing { color: #ffc107; font-style: italic; animation: pulse 1s infinite; }
+        @keyframes pulse { 50% { opacity: 0.5; } }
+
+        /* Game History Premium Design */
+        .res-ball { width: 25px; height: 25px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; color: white; font-weight: bold; box-shadow: 1px 1px 3px rgba(0,0,0,0.5); }
+        .bg-red { background-color: #f44336; }
+        .bg-green { background-color: #4caf50; }
+        .bg-n0 { background: linear-gradient(135deg, #9c27b0 50%, #f44336 50%); }
+        .bg-n5 { background: linear-gradient(135deg, #9c27b0 50%, #4caf50 50%); }
+        .tag { padding: 3px 10px; border-radius: 5px; font-size: 11px; font-weight: bold; color: white; }
+        .tag-big { background-color: #ffa000; }
+        .tag-small { background-color: #3a7bd5; }
+
+        .toast { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.9); color: white; padding: 12px 25px; border-radius: 30px; font-size: 14px; z-index: 1000; display: none; border: 1px solid #444; }
+        .res-popup { display: none; position: fixed; top: 0; width: 375px; height: 100%; background: rgba(0,0,0,0.9); z-index: 200; flex-direction: column; justify-content: center; align-items: center; }
+        .res-card { background: #222; padding: 30px; border-radius: 20px; text-align: center; border: 1px solid #ffc107; transform: scale(0.5); transition: 0.3s; }
+        .res-card.show { transform: scale(1); }
+    </style>
+</head>
+<body>
+
+    <div class="wrapper">
+        <header class="header"><a href="../lobby/index.html" style="color:white;"><i class="fa-solid fa-chevron-left"></i></a> <b>WinGo 30s</b> <i class="fa-solid fa-circle-question"></i></header>
+        <div class="balance-card"><p>Wallet Balance</p><h1>₹ <span id="balance">1000.00</span></h1></div>
+        <div class="timer-container">
+            <div><p style="font-size:12px; color:#aaa;">Period Number</p><h4 id="period">20260330001</h4></div>
+            <div style="text-align:right;"><p style="font-size:12px; color:#aaa;">Time</p><div class="time-display" id="timer">00:30</div></div>
+        </div>
+
+        <div class="color-btns">
+            <button class="c-btn green bet-input" onclick="openBet('Green')">Green</button>
+            <button class="c-btn violet bet-input" onclick="openBet('Violet')">Violet</button>
+            <button class="c-btn red bet-input" onclick="openBet('Red')">Red</button>
+        </div>
+        <div class="number-grid">
+            <script>for(let i=0; i<=9; i++) document.write(`<button class="num-btn n${i} bet-input" onclick="openBet('${i}')">${i}</button>`);</script>
+        </div>
+        <div class="size-btns">
+            <button class="s-btn big bet-input" onclick="openBet('Big')">Big</button>
+            <button class="s-btn small bet-input" onclick="openBet('Small')">Small</button>
+        </div>
+
+        <div class="history-section">
+            <div class="tabs">
+                <div class="tab active" onclick="switchTab('game', this)">Game History</div>
+                <div class="tab" onclick="switchTab('my', this)">My History</div>
+            </div>
+            <div id="game-list"><table><thead><tr><th>Period</th><th>Num</th><th>Size</th><th>Color</th></tr></thead><tbody id="game-records"></tbody></table></div>
+            <div id="my-list" style="display:none;"><table><thead><tr><th>Period</th><th>Bet</th><th>Amount</th><th>Result</th></tr></thead><tbody id="my-records"></tbody></table></div>
+        </div>
+    </div>
+
+    <div id="modal" class="modal">
+        <div class="modal-box">
+            <h3 id="bet-title">Select: Green</h3><br>
+            <input type="number" id="custom-amt" class="custom-input" value="10">
+            <p style="font-size:11px; color:#888; margin-bottom:15px;">2% GST Fee will be applied.</p>
+            <button class="confirm-btn" onclick="confirmBet()" style="width:100%; background:#d32f2f; color:white; padding:15px; border:none; border-radius:30px; font-weight:bold;">Confirm</button>
+            <button onclick="closeModal()" style="width:100%; background:none; border:none; color:#888; margin-top:10px;">Cancel</button>
+        </div>
+    </div>
+
+    <div id="toast" class="toast">Bet Placed Successfully!</div>
+    
+    <div id="res-popup" class="res-popup">
+        <div class="res-card" id="res-card">
+            <h2 id="res-msg" style="color: #ffc107;">Congratulations</h2>
+            <h1 id="res-amount" style="margin: 15px 0;">+ ₹0.00</h1>
+            <button onclick="closeResult()" style="background: #ffc107; border: none; padding: 10px 30px; border-radius: 20px; font-weight: bold; cursor: pointer;">OK</button>
+        </div>
+    </div>
+
+    <script>
+        let balance = parseFloat(localStorage.getItem('bal')) || 1000.00;
+        let gameHistory = JSON.parse(localStorage.getItem('gameH')) || [];
+        let myHistory = JSON.parse(localStorage.getItem('myH')) || [];
+        let period = 20260330001;
+        let isLockdown = false;
+        let selectedBet = "";
+
+        function updateUI() {
+            document.getElementById('balance').innerText = balance.toFixed(2);
+            localStorage.setItem('bal', balance);
+            localStorage.setItem('gameH', JSON.stringify(gameHistory));
+            localStorage.setItem('myH', JSON.stringify(myHistory));
+            renderTables();
+        }
+
+        function renderTables() {
+            // Game History Table with Balls
+            document.getElementById('game-records').innerHTML = gameHistory.map(g => {
+                let ballClass = g.n === 0 ? "bg-n0" : (g.n === 5 ? "bg-n5" : (g.n % 2 === 0 ? "bg-red" : "bg-green"));
+                let sizeClass = g.s === "Big" ? "tag-big" : "tag-small";
+                let textColor = g.c === 'Green' ? '#4caf50' : (g.c === 'Red' ? '#f44336' : '#9c27b0');
+                return `<tr><td>${g.p}</td><td><div class="res-ball ${ballClass}">${g.n}</div></td><td><span class="tag ${sizeClass}">${g.s}</span></td><td style="color:${textColor}; font-weight:bold;">${g.c}</td></tr>`;
+            }).join('');
+
+            // My History Table
+            document.getElementById('my-records').innerHTML = myHistory.map(h => `<tr><td>${h.p}</td><td>${h.sel}</td><td>${h.amt}</td><td style="color:${h.color}; font-weight:bold;" class="${h.res==='Processing'?'processing':''}">${h.res}</td></tr>`).join('');
+        }
+
+        function startTimer() {
+            let s = 30;
+            setInterval(() => {
+                s--;
+                if (s <= 5) { isLockdown = true; document.getElementById('timer').classList.add('lockdown'); closeModal(); }
+                if (s < 0) {
+                    s = 30; isLockdown = false;
+                    document.getElementById('timer').classList.remove('lockdown');
+                    generateResult();
+                    period++;
+                    document.getElementById('period').innerText = period;
+                }
+                document.getElementById('timer').innerText = "00:" + (s < 10 ? "0" + s : s);
+            }, 1000);
+        }
+
+        function openBet(val) {
+            if(isLockdown) return;
+            selectedBet = val;
+            document.getElementById('bet-title').innerText = "Select: " + val;
+            document.getElementById('modal').style.display = 'flex';
+        }
+
+        function closeModal() { document.getElementById('modal').style.display = 'none'; }
+
+        function confirmBet() {
+            let amt = parseFloat(document.getElementById('custom-amt').value);
+            if (balance >= amt && amt > 0) {
+                balance -= amt;
+                let finalAmt = amt * 0.98; // 2% GST Deduction
+                let betObj = { p: period, sel: selectedBet, amt: amt, final: finalAmt, res: "Processing", color: "#ffc107" };
+                myHistory.unshift(betObj);
+                updateUI();
+                closeModal();
+                showToast("Bet Placed Successfully!");
+            } else { showToast("Insufficient Balance!"); }
+        }
+
+        function generateResult() {
+            // Admin Result Control
+            let adminNext = localStorage.getItem('nextResult');
+            let num = adminNext !== null ? parseInt(adminNext) : Math.floor(Math.random() * 10);
+            localStorage.removeItem('nextResult'); // Reset after use
+
+            const size = num <= 4 ? "Small" : "Big";
+            const color = (num === 0 || num === 5) ? "Violet" : (num % 2 === 0 ? "Red" : "Green");
+            
+            gameHistory.unshift({ p: period, n: num, s: size, c: color });
+            if(gameHistory.length > 20) gameHistory.pop();
+
+            let winTotal = 0;
+            let lostTotal = 0;
+            let hasWin = false;
+            let hasBet = false;
+
+            myHistory.forEach(bet => {
+                if(bet.p === period && bet.res === "Processing") {
+                    hasBet = true;
+                    let isNum = !isNaN(bet.sel);
+                    let mult = 1.96;
+                    if(bet.sel === "Violet") mult = 3.0;
+                    if(isNum) mult = 10.0;
+
+                    let win = (bet.sel === color || bet.sel === num.toString() || bet.sel === size);
+                    if(win) {
+                        let winAmt = bet.final * mult;
+                        winTotal += winAmt;
+                        bet.res = "WIN"; bet.color = "#4caf50";
+                        hasWin = true;
+                    } else {
+                        lostTotal += bet.amt;
+                        bet.res = "LOSS"; bet.color = "#f44336";
+                    }
+                }
+            });
+
+            if(hasBet) {
+                balance += winTotal;
+                showResultPopup(hasWin, hasWin ? winTotal : lostTotal);
+            }
+            updateUI();
+        }
+
+        function showResultPopup(win, amt) {
+            const popup = document.getElementById('res-popup');
+            const card = document.getElementById('res-card');
+            document.getElementById('res-msg').innerText = win ? "Congratulations" : "Better Luck Next Time";
+            document.getElementById('res-msg').style.color = win ? "#ffc107" : "#fff";
+            document.getElementById('res-amount').innerText = (win ? "+ ₹" : "- ₹") + parseFloat(amt).toFixed(2);
+            popup.style.display = 'flex';
+            setTimeout(() => card.classList.add('show'), 10);
+        }
+
+        function closeResult() {
+            document.getElementById('res-card').classList.remove('show');
+            setTimeout(() => document.getElementById('res-popup').style.display = 'none', 300);
+        }
+
+        function showToast(msg) {
+            let t = document.getElementById('toast');
+            t.innerText = msg; t.style.display = 'block';
+            setTimeout(() => t.style.display = 'none', 2000);
+        }
+
+        function switchTab(type, el) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            el.classList.add('active');
+            document.getElementById('game-list').style.display = type === 'game' ? 'block' : 'none';
+            document.getElementById('my-list').style.display = type === 'my' ? 'block' : 'none';
+        }
+
+        window.onload = () => { startTimer(); updateUI(); };
+    </script>
+</body>
+</html>
