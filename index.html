@@ -1,255 +1,98 @@
-
-  <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WinGo Master Admin - Online</title>
+    <title>BDG Official - Home</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
-
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
-        body { background: #0f0f0f; color: white; padding: 20px; }
-        .admin-wrapper { max-width: 1000px; margin: 0 auto; }
-        h2 { color: #ffc107; margin-bottom: 20px; text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px; }
+        body { background-color: #1a1a1a; color: white; display: flex; justify-content: center; }
+        .app-container { width: 375px; background: #111; min-height: 100vh; padding-bottom: 80px; }
 
-        /* Grid Layout */
-        .admin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .card { background: #1a1a1a; padding: 20px; border-radius: 15px; border: 1px solid #333; margin-bottom: 20px; }
+        /* Banner */
+        .banner { width: 100%; height: 180px; background: linear-gradient(45deg, #d32f2f, #ffc107); display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold; }
 
-        /* Result Control */
-        .btn-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-top: 15px; }
-        .num-btn { padding: 10px; border-radius: 8px; border: 1px solid #444; background: #222; color: white; cursor: pointer; font-weight: bold; }
-        .num-btn.active { background: #ffc107; color: black; border-color: #ffc107; }
+        /* Info Section */
+        .user-info { padding: 15px; display: flex; justify-content: space-between; align-items: center; background: #222; margin: 10px; border-radius: 10px; }
+        .balance-box h2 { color: #ffc107; font-size: 20px; }
+        .balance-box p { font-size: 12px; color: #888; }
 
-        /* Tables */
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #333; }
-        th { color: #888; }
-        .action-input { width: 70px; padding: 5px; background: #000; border: 1px solid #444; color: #ffc107; border-radius: 5px; }
-        
-        /* Buttons */
-        .btn-sm { padding: 6px 12px; border-radius: 5px; border: none; cursor: pointer; font-size: 12px; font-weight: bold; }
-        .btn-add { background: #2e7d32; color: white; }
-        .btn-minus { background: #c62828; color: white; }
-        .btn-reject { background: #555; color: white; margin-left: 5px; }
+        /* Game Grid */
+        .game-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 15px; }
+        .game-card { background: #222; border-radius: 15px; padding: 20px; text-align: center; border: 1px solid #333; cursor: pointer; transition: 0.3s; text-decoration: none; color: white; }
+        .game-card:active { transform: scale(0.95); }
+        .game-card i { font-size: 40px; margin-bottom: 10px; color: #ffc107; }
+        .game-card h3 { font-size: 16px; }
 
-        /* Type Badge */
-        .badge { padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; }
-        .bg-deposit { background: #2e7d32; color: white; }
-        .bg-withdraw { background: #f57c00; color: white; }
+        /* Bottom Nav */
+        .bottom-nav { position: fixed; bottom: 0; width: 375px; background: #222; display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #333; }
+        .nav-item { text-align: center; color: #888; text-decoration: none; font-size: 11px; flex: 1; }
+        .nav-item.active { color: #ffc107; }
+        .nav-item i { font-size: 22px; margin-bottom: 4px; display: block; }
     </style>
 </head>
 <body>
 
-<div class="admin-wrapper">
-    <h2><i class="fa-solid fa-user-shield"></i> BDG Master Admin Panel (Online)</h2>
+    <div class="app-container">
+        <div class="banner">BDG GAME OFFICIAL</div>
 
-    <div class="admin-grid">
-        <div class="card">
-            <h3><i class="fa-solid fa-gamepad"></i> Next Result Control</h3>
-            <div class="btn-grid" id="hacker-grid">
-                <button class="num-btn" onclick="setNext(0, this)">0</button>
-                <button class="num-btn" onclick="setNext(1, this)">1</button>
-                <button class="num-btn" onclick="setNext(2, this)">2</button>
-                <button class="num-btn" onclick="setNext(3, this)">3</button>
-                <button class="num-btn" onclick="setNext(4, this)">4</button>
-                <button class="num-btn" onclick="setNext(5, this)">5</button>
-                <button class="num-btn" onclick="setNext(6, this)">6</button>
-                <button class="num-btn" onclick="setNext(7, this)">7</button>
-                <button class="num-btn" onclick="setNext(8, this)">8</button>
-                <button class="num-btn" onclick="setNext(9, this)">9</button>
+        <div class="user-info">
+            <div class="balance-box">
+                <p>Total Balance</p>
+                <h2>₹ <span id="main-bal">0.00</span></h2>
             </div>
-            <button onclick="clearNext()" style="margin-top:15px; width:100%; padding:8px; background:none; border:1px solid red; color:red; border-radius:8px; cursor:pointer;">Reset to Auto</button>
+            <a href="wallet/index.html" style="background:#ffc107; color:black; padding:8px 15px; border-radius:5px; text-decoration:none; font-weight:bold; font-size:12px;">Deposit</a>
         </div>
 
-        <div class="card">
-            <h3><i class="fa-solid fa-bell"></i> Pending Requests</h3>
-            <table>
-                <thead>
-                    <tr>
-                        <th>User</th>
-                        <th>Type</th>
-                        <th>Amount</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody id="request-table">
-                    </tbody>
-            </table>
+        <div class="game-grid">
+            <a href="wingo/index.html" class="game-card">
+                <i class="fa-solid fa-dice"></i>
+                <h3>Win Go</h3>
+                <p style="font-size:10px; color:#555;">1 Min / 3 Min</p>
+            </a>
+            <div class="game-card" onclick="alert('Coming Soon!')">
+                <i class="fa-solid fa-slot-machine"></i>
+                <h3>Slots</h3>
+                <p style="font-size:10px; color:#555;">Popular</p>
+            </div>
+            <div class="game-card" onclick="alert('Coming Soon!')">
+                <i class="fa-solid fa-cards-blank"></i>
+                <h3>Casino</h3>
+                <p style="font-size:10px; color:#555;">Live Dealer</p>
+            </div>
+            <div class="game-card" onclick="alert('Coming Soon!')">
+                <i class="fa-solid fa-trophy"></i>
+                <h3>Sports</h3>
+                <p style="font-size:10px; color:#555;">Cricket/Football</p>
+            </div>
         </div>
+
+        <nav class="bottom-nav">
+            <a href="index.html" class="nav-item active"><i class="fa-solid fa-house"></i>Home</a>
+            <a href="activity/index.html" class="nav-item"><i class="fa-solid fa-gift"></i>Activity</a>
+            <a href="wallet/index.html" class="nav-item"><i class="fa-solid fa-wallet"></i>Wallet</a>
+            <a href="account/index.html" class="nav-item"><i class="fa-solid fa-user"></i>Account</a>
+        </nav>
     </div>
 
-    <div class="card">
-        <h3><i class="fa-solid fa-users"></i> Registered Users</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>Phone Number</th>
-                    <th>Balance</th>
-                    <th>Action (Add/Minus)</th>
-                </tr>
-            </thead>
-            <tbody id="user-table">
-                </tbody>
-        </table>
-    </div>
-</div>
-
-<script>
-    // --- Firebase Configuration ---
-    const firebaseConfig = {
-        apiKey: "AIzaSyD2It_WJyq3VzjGFE0tqlm_Wac7CHEb2LI",
-        authDomain: "bdg-game-35af2.firebaseapp.com",
-        databaseURL: "https://bdg-game-35af2-default-rtdb.firebaseio.com",
-        projectId: "bdg-game-35af2",
-        storageBucket: "bdg-game-35af2.firebasestorage.app",
-        messagingSenderId: "1040854462703",
-        appId: "1:1040854462703:web:4875b19f420c57dafbeb1a"
-    };
-
-    firebase.initializeApp(firebaseConfig);
-    const database = firebase.database();
-
-    // --- Result Hacker Logic (Online) ---
-    function setNext(num, el) {
-        database.ref('gameControl/nextResult').set(num).then(() => {
-            document.querySelectorAll('.num-btn').forEach(b => b.classList.remove('active'));
-            el.classList.add('active');
-            alert("Next result hacked to: " + num);
-        });
-    }
-
-    function clearNext() {
-        database.ref('gameControl/nextResult').remove().then(() => {
-            document.querySelectorAll('.num-btn').forEach(b => b.classList.remove('active'));
-            alert("Result reset to Auto");
-        });
-    }
-
-    // --- Core Admin Logic (Real-time) ---
-    function listenAdminData() {
-        // ১. পেন্ডিং রিকোয়েস্ট দেখা (Online)
-        database.ref('allRequests').on('value', (snapshot) => {
-            const reqTable = document.getElementById('request-table');
-            reqTable.innerHTML = "";
-            const data = snapshot.val();
-            
-            if(!data) {
-                reqTable.innerHTML = "<tr><td colspan='4' style='text-align:center; color:#555;'>No pending requests</td></tr>";
-                return;
-            }
-
-            Object.keys(data).forEach(key => {
-                const req = data[key];
-                if(req.status === 'Pending') {
-                    const badgeClass = req.type === 'Deposit' ? 'bg-deposit' : 'bg-withdraw';
-                    reqTable.innerHTML += `
-                        <tr>
-                            <td>${req.phone}</td>
-                            <td><span class="badge ${badgeClass}">${req.type}</span></td>
-                            <td>₹${req.amount}</td>
-                            <td>
-                                <button class="btn-sm btn-add" onclick="processRequest('${key}', 'Approve')">Approve</button>
-                                <button class="btn-sm btn-reject" onclick="processRequest('${key}', 'Reject')">Reject</button>
-                            </td>
-                        </tr>`;
-                }
-            });
-        });
-
-        // ২. ইউজার লিস্ট দেখা (Online)
-        // Firebase থেকে ইউজারদের ডাটা রিয়েল-টাইমে ফেচ করা
-        database.ref('users').on('value', (snapshot) => {
-            const userTable = document.getElementById('user-table');
-            userTable.innerHTML = "";
-            const users = snapshot.val();
-
-            if(!users) {
-                userTable.innerHTML = "<tr><td colspan='3' style='text-align:center;'>No users registered</td></tr>";
-                return;
-            }
-
-            Object.keys(users).forEach(phone => {
-                const userBal = users[phone].balance || 0;
-                userTable.innerHTML += `
-                    <tr>
-                        <td>${phone}</td>
-                        <td>₹${parseFloat(userBal).toFixed(2)}</td>
-                        <td>
-                            <input type="number" id="amt-${phone}" class="action-input" placeholder="0">
-                            <button class="btn-sm btn-add" onclick="manualUpdate('${phone}', 'add')">Add</button>
-                            <button class="btn-sm btn-minus" onclick="manualUpdate('${phone}', 'minus')">Minus</button>
-                        </td>
-                    </tr>`;
-            });
-        });
-
-        // ৩. রেজাল্ট হ্যাকার স্ট্যাটাস সিঙ্ক করা
-        database.ref('gameControl/nextResult').on('value', (snapshot) => {
-            const activeNum = snapshot.val();
-            document.querySelectorAll('.num-btn').forEach(btn => {
-                btn.classList.remove('active');
-                if (btn.innerText == activeNum) btn.classList.add('active');
-            });
-        });
-    }
-
-    // রিকোয়েস্ট এপ্রুভ বা রিজেক্ট করা
-    function processRequest(key, action) {
-        database.ref('allRequests/' + key).once('value', (snapshot) => {
-            const req = snapshot.val();
-            if(!req) return;
-
-            if(action === 'Approve') {
-                const userRef = database.ref('users/' + req.phone + '/balance');
-                userRef.once('value', (snap) => {
-                    let currentBal = snap.val() || 0;
-                    if(req.type === 'Deposit') {
-                        currentBal += req.amount;
-                    } else {
-                        if(currentBal >= req.amount) {
-                            currentBal -= req.amount;
-                        } else {
-                            alert("Insufficient user balance!");
-                            return;
-                        }
-                    }
-                    
-                    // ব্যালেন্স ও স্ট্যাটাস আপডেট
-                    userRef.set(currentBal);
-                    database.ref('allRequests/' + key).update({ status: 'Approved' });
-                    alert("Approved successfully!");
-                });
+    <script>
+        function checkUser() {
+            // ইউজারের ডাটা চেক করা
+            const user = JSON.parse(localStorage.getItem('userData'));
+            if(!user) {
+                // যদি লগইন না থাকে তবে লগইন পেজে পাঠাবে
+                window.location.href = "auth/login.html"; 
             } else {
-                database.ref('allRequests/' + key).update({ status: 'Rejected' });
-                alert("Rejected!");
+                // ব্যালেন্স লোড করা
+                let bal = localStorage.getItem('bal') || "0.00";
+                document.getElementById('main-bal').innerText = parseFloat(bal).toFixed(2);
             }
-        });
-    }
+        }
 
-    // ম্যানুয়ালি ব্যালেন্স কমানো বাড়ানো
-    function manualUpdate(phone, type) {
-        const input = document.getElementById('amt-' + phone);
-        const amt = parseFloat(input.value);
-        if(isNaN(amt) || amt <= 0) return alert("Enter valid amount");
-
-        const userRef = database.ref('users/' + phone + '/balance');
-        userRef.once('value', (snap) => {
-            let currentBal = snap.val() || 0;
-            currentBal = (type === 'add') ? currentBal + amt : currentBal - amt;
-            userRef.set(currentBal).then(() => {
-                alert("Balance Updated!");
-                input.value = "";
-            });
-        });
-    }
-
-    window.onload = listenAdminData;
-</script>
-
+        window.onload = checkUser;
+        // প্রতি ৫ সেকেন্ডে ব্যালেন্স আপডেট হবে (অ্যাডমিন এপ্রুভ করলে যাতে দেখা যায়)
+        setInterval(checkUser, 5000);
+    </script>
 </body>
 </html>
