@@ -14,15 +14,25 @@
         body { background: #0f0f0f; color: white; padding: 20px; }
         .admin-wrapper { max-width: 1000px; margin: 0 auto; }
         h2 { color: #ffc107; margin-bottom: 20px; text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px; }
+        
+        /* Live Status Card */
+        .live-status { background: #222; padding: 15px; border-radius: 12px; margin-bottom: 20px; display: flex; justify-content: space-around; align-items: center; border: 1px dashed #444; }
+        .status-box { text-align: center; }
+        .status-box p { font-size: 12px; color: #888; text-transform: uppercase; }
+        .status-box h3 { color: #ffc107; font-size: 20px; }
+
         .admin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         .card { background: #1a1a1a; padding: 20px; border-radius: 15px; border: 1px solid #333; margin-bottom: 20px; }
         .btn-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-top: 15px; }
-        .num-btn { padding: 10px; border-radius: 8px; border: 1px solid #444; background: #222; color: white; cursor: pointer; font-weight: bold; transition: 0.3s; }
-        .num-btn.active { background: #ffc107; color: black; border-color: #ffc107; box-shadow: 0 0 10px #ffc107; }
+        .num-btn { padding: 15px 10px; border-radius: 8px; border: 1px solid #444; background: #222; color: white; cursor: pointer; font-weight: bold; transition: 0.3s; font-size: 16px; }
+        .num-btn:hover { border-color: #ffc107; }
+        .num-btn.active { background: #ffc107; color: black; border-color: #ffc107; box-shadow: 0 0 15px rgba(255,193,7,0.4); }
+        
         table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
         th, td { padding: 12px; text-align: left; border-bottom: 1px solid #333; }
         th { color: #888; }
-        .status-text { font-size: 12px; margin-top: 10px; text-align: center; display: block; }
+        .status-text { font-size: 14px; margin-top: 15px; text-align: center; display: block; font-weight: bold; }
+        .lock-warning { color: #f44336; font-size: 12px; margin-top: 5px; display: none; }
     </style>
 </head>
 <body>
@@ -30,10 +40,22 @@
 <div class="admin-wrapper">
     <h2><i class="fa-solid fa-user-shield"></i> BDG Master Admin (LIVE)</h2>
 
+    <div class="live-status">
+        <div class="status-box">
+            <p>Current Period</p>
+            <h3 id="admin-period">Loading...</h3>
+        </div>
+        <div class="status-box">
+            <p>Time Left</p>
+            <h3 id="admin-timer" style="color: #ffc107;">00:00</h3>
+        </div>
+    </div>
+
     <div class="admin-grid">
         <div class="card">
             <h3><i class="fa-solid fa-gamepad"></i> Next Result Control</h3>
-            <p style="font-size: 11px; color: #888; margin-bottom: 10px;">টাইমার শেষ হওয়ার আগে যেকোনো নাম্বারে ক্লিক করুন।</p>
+            <p style="font-size: 11px; color: #888; margin-top: 5px;">টাইমার ৫ সেকেন্ড হওয়ার আগে নম্বর সেট করুন।</p>
+            
             <div class="btn-grid">
                 <script>
                     for(let i=0; i<=9; i++) {
@@ -41,18 +63,23 @@
                     }
                 </script>
             </div>
+            
             <span id="sync-status" class="status-text">Checking Database...</span>
-            <button onclick="clearNext()" style="margin-top:15px; width:100%; padding:10px; background:none; border:1px solid red; color:red; border-radius:8px; cursor:pointer; font-weight:bold;">Reset to Auto (Random)</button>
+            <p id="lock-msg" class="lock-warning">⚠️ Betting Locked! Wait for next round.</p>
+            
+            <button onclick="clearNext()" style="margin-top:20px; width:100%; padding:12px; background:none; border:1px solid #f44336; color:#f44336; border-radius:8px; cursor:pointer; font-weight:bold; transition: 0.3s;">
+                <i class="fa-solid fa-rotate"></i> Reset to Auto Mode
+            </button>
         </div>
 
         <div class="card">
-            <h3><i class="fa-solid fa-bell"></i> Pending Requests</h3>
+            <h3><i class="fa-solid fa-bell"></i> Live Activity</h3>
             <table>
                 <thead>
-                    <tr><th>User</th><th>Type</th><th>Amount</th><th>Action</th></tr>
+                    <tr><th>User ID</th><th>Bet</th><th>Amount</th><th>Status</th></tr>
                 </thead>
                 <tbody id="request-table">
-                    <tr><td colspan="4" style="text-align:center; color:#555;">No pending requests</td></tr>
+                    <tr><td colspan="4" style="text-align:center; color:#555; padding: 20px;">Watching live bets...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -60,7 +87,7 @@
 </div>
 
 <script>
-    // --- Firebase Configuration (আপনার ডাটাবেসের জন্য) ---
+    // --- Firebase Configuration ---
     const firebaseConfig = {
         apiKey: "AIzaSyD2It_WJyq3VzjGFE0tqlm_Wac7CHEb2LI",
         authDomain: "bdg-game-35af2.firebaseapp.com",
@@ -74,7 +101,33 @@
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
 
-    // ১. ডাটাবেস থেকে বর্তমান "Hacked Result" চেক করা
+    // ১. লাইভ টাইমার সিঙ্ক (Wingo.html এর সাথে হুবহু মিল)
+    function startAdminTimer() {
+        setInterval(() => {
+            const now = new Date();
+            const seconds = now.getSeconds();
+            const remaining = (seconds >= 30) ? 60 - seconds : 30 - seconds;
+            
+            // পিরিয়ড আইডি জেনারেট
+            const dateStr = now.toISOString().slice(0, 10).replace(/-/g, "");
+            const totalSeconds = (now.getHours() * 3600) + (now.getMinutes() * 60) + seconds;
+            const currentPeriod = dateStr + Math.floor(totalSeconds / 30);
+            
+            document.getElementById('admin-period').innerText = currentPeriod;
+            document.getElementById('admin-timer').innerText = "00:" + (remaining < 10 ? "0" + remaining : remaining);
+
+            // ৫ সেকেন্ডের নিচে গেলে ইনপুট লক দেখাবে
+            if(remaining <= 5) {
+                document.getElementById('lock-msg').style.display = 'block';
+                document.querySelectorAll('.num-btn').forEach(b => b.style.opacity = '0.5');
+            } else {
+                document.getElementById('lock-msg').style.display = 'none';
+                document.querySelectorAll('.num-btn').forEach(b => b.style.opacity = '1');
+            }
+        }, 1000);
+    }
+
+    // ২. ডাটাবেস থেকে বর্তমান "Hacked Result" মনিটর করা
     database.ref('gameControl/nextResult').on('value', (snapshot) => {
         const val = snapshot.val();
         document.querySelectorAll('.num-btn').forEach(b => b.classList.remove('active'));
@@ -82,31 +135,28 @@
         
         if (val !== null) {
             document.getElementById('btn-' + val).classList.add('active');
-            status.innerHTML = `<span style="color:#ffc107;">🔥 Next Result is Hacked to: ${val}</span>`;
+            status.innerHTML = `<span style="color:#ffc107;">🔥 Active Hack: Number ${val}</span>`;
         } else {
-            status.innerHTML = `<span style="color:#4caf50;">✅ Running on Auto Mode</span>`;
+            status.innerHTML = `<span style="color:#4caf50;">✅ Status: Auto Mode (Random)</span>`;
         }
     });
 
-    // ২. এডমিন প্যানেল থেকে রেজাল্ট ডাটাবেসে সেট করা
+    // ৩. রেজাল্ট সেট করা
     function setNextResult(num) {
-        database.ref('gameControl/nextResult').set(num)
-        .then(() => {
-            console.log("Result set to " + num);
-        })
-        .catch((err) => {
-            alert("Database Error: " + err.message);
-        });
+        const remaining = parseInt(document.getElementById('admin-timer').innerText.split(":")[1]);
+        if(remaining <= 2) {
+            alert("Too late! Wait for the next period.");
+            return;
+        }
+        database.ref('gameControl/nextResult').set(num);
     }
 
-    // ৩. রেজাল্ট ক্লিয়ার করা (অটো মুড)
+    // ৪. অটো মোডে ফেরত যাওয়া
     function clearNext() {
-        database.ref('gameControl/nextResult').remove()
-        .then(() => {
-            alert("Success: Game is now back to Auto Mode!");
-        });
+        database.ref('gameControl/nextResult').remove();
     }
 
+    window.onload = startAdminTimer;
 </script>
 
 </body>
