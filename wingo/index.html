@@ -116,25 +116,20 @@
         let isLockdown = false;
         let selectedBet = "";
 
-        // ১. পিরিয়ড আইডি জেনারেশন (UTC Time ব্যবহার করে যা কখনো থামবে না)
         function generatePeriodID() {
             const now = new Date();
             const dateStr = now.getUTCFullYear().toString() + 
                             (now.getUTCMonth() + 1).toString().padStart(2, '0') + 
                             now.getUTCDate().toString().padStart(2, '0');
-            
             const totalSeconds = (now.getUTCHours() * 3600) + (now.getUTCMinutes() * 60) + now.getUTCSeconds();
             const periodNum = Math.floor(totalSeconds / 30);
             return dateStr + periodNum.toString().padStart(4, '0');
         }
 
-        // ২. রিয়েল-টাইম গ্লোবাল টাইমার
         function startTimer() {
             setInterval(() => {
                 const now = new Date();
                 const seconds = now.getUTCSeconds();
-                
-                // ৩০ সেকেন্ডের সাইকেল
                 const s = (seconds >= 30) ? 60 - seconds : 30 - seconds;
                 const pID = generatePeriodID();
                 
@@ -150,9 +145,9 @@
                     document.getElementById('timer').classList.remove('lockdown');
                 }
 
-                // টাইমার ১ সেকেন্ডে আসলে রেজাল্ট ফেচ করবে
-                if (s === 1) {
-                    setTimeout(() => fetchAndGenerateResult(pID), 1200);
+                // টাইমার যখন ঠিক ০ হবে, তার ১.৫ সেকেন্ড পর রেজাল্ট চেক করবে
+                if (s === 0) {
+                    setTimeout(() => fetchAndGenerateResult(pID), 1500);
                 }
             }, 1000);
         }
@@ -160,12 +155,15 @@
         async function fetchAndGenerateResult(pID) {
             const snapshot = await database.ref('gameControl/currentResult').get();
             let num;
+            const data = snapshot.val();
 
-            // ডাটাবেসে এই পিরিয়ডের রেজাল্ট থাকলে সেটি নেবে, না থাকলে অটো র‍্যান্ডম
-            if (snapshot.exists() && snapshot.val().period === pID) {
-                num = parseInt(snapshot.val().number);
+            // ডাটাবেসে এই পিরিয়ডের রেজাল্ট থাকলে সেটি নেবে
+            if (snapshot.exists() && data.period === pID) {
+                num = parseInt(data.number);
             } else {
-                num = Math.floor(Math.random() * 10);
+                // সিঙ্ক না হলে পিরিয়ড আইডি ভিত্তিক একটি নম্বর জেনারেট করবে যাতে সবার ফোনে এক থাকে
+                let seed = parseInt(pID.slice(-4));
+                num = (seed * 7 + 13) % 10;
             }
 
             const size = num <= 4 ? "Small" : "Big";
