@@ -46,8 +46,14 @@
 <body>
 
     <div class="wrapper">
-        <header class="header"><b>WinGo 30s Live</b></header>
-        <div class="balance-card"><p>Wallet Balance</p><h1>₹ <span id="balance">0.00</span></h1></div>
+        <header class="header">
+            <b>WinGo 30s Live</b>
+            <span id="display-uid" style="font-size: 10px; color: #aaa;">ID: Loading...</span>
+        </header>
+        <div class="balance-card">
+            <p>Wallet Balance</p>
+            <h1>₹ <span id="balance">0.00</span></h1>
+        </div>
         <div class="timer-container">
             <div><p style="font-size:12px; color:#aaa;">Period Number</p><h4 id="period">Loading...</h4></div>
             <div style="text-align:right;"><p style="font-size:12px; color:#aaa;">Time</p><div class="time-display" id="timer">00:00</div></div>
@@ -106,11 +112,30 @@
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
-        let balance = parseFloat(localStorage.getItem('bal')) || 1000.00;
+        // ইউজার আইডি সেটআপ
+        let userID = localStorage.getItem('uID') || "UID" + Math.floor(1000 + Math.random() * 9000);
+        localStorage.setItem('uID', userID);
+        document.getElementById('display-uid').innerText = "ID: " + userID;
+
+        let balance = 0;
         let myHistory = JSON.parse(localStorage.getItem('myH')) || [];
         let gameHistory = [];
         let isLockdown = false;
         let selectedBet = "";
+
+        // রিয়েল-টাইম ব্যালেন্স সিঙ্ক (অ্যাডমিন আপডেট করলে এখানে অটো বদলে যাবে)
+        function syncUserBalance() {
+            database.ref('users/' + userID + '/balance').on('value', (snapshot) => {
+                if (snapshot.exists()) {
+                    balance = parseFloat(snapshot.val());
+                } else {
+                    // প্রথমবার ইউজার এলে ডাটাবেসে নতুন এন্ট্রি তৈরি হবে
+                    database.ref('users/' + userID).set({ id: userID, balance: 1000.00 });
+                    balance = 1000.00;
+                }
+                updateUI();
+            });
+        }
 
         function generatePeriodID() {
             const now = new Date();
@@ -119,15 +144,12 @@
             return dateStr + Math.floor(totalSeconds / 30).toString().padStart(4, '0');
         }
 
-        // হিস্ট্রি সিঙ্ক ফাংশন (সবচেয়ে গুরুত্বপূর্ণ)
         function syncHistory() {
             database.ref('gameControl/history').limitToLast(20).on('value', (snapshot) => {
                 const data = snapshot.val();
                 if (data) {
                     gameHistory = Object.values(data).reverse();
                     renderTables();
-                } else {
-                    document.getElementById('game-records').innerHTML = "<tr><td colspan='4'>No History Found. Start Admin!</td></tr>";
                 }
             });
         }
@@ -150,7 +172,7 @@
                     document.getElementById('timer').classList.remove('lockdown');
                 }
 
-                if (s === 1) { // পিরিয়ড শেষ হওয়ার ঠিক আগে রেজাল্ট চেক
+                if (s === 1) {
                     setTimeout(() => checkBetResult(pID), 2500);
                 }
             }, 1000);
@@ -180,9 +202,9 @@
                 });
 
                 if(hasBet) {
-                    balance += winTotal;
+                    const newBal = balance + winTotal;
+                    database.ref('users/' + userID + '/balance').set(newBal); // ডাটাবেসে উইন ব্যালেন্স আপডেট
                     showResultPopup(winFlag, winTotal);
-                    updateUI();
                 }
             }
         }
@@ -204,13 +226,17 @@
 
         function openBet(val) { if(isLockdown) return; selectedBet = val; document.getElementById('bet-title').innerText = "Select: " + val; document.getElementById('modal').style.display = 'flex'; }
         function closeModal() { document.getElementById('modal').style.display = 'none'; }
+        
         function confirmBet() {
             let amt = parseFloat(document.getElementById('custom-amt').value);
             let currentP = document.getElementById('period').innerText;
             if (balance >= amt && amt > 0) {
-                balance -= amt;
+                const newBal = balance - amt;
+                database.ref('users/' + userID + '/balance').set(newBal); // বাজি ধরার সাথে সাথে ব্যালেন্স কাটা যাবে
                 myHistory.unshift({ p: currentP, sel: selectedBet, amt: amt, res: "Processing", color: "#ffc107" });
-                updateUI(); closeModal();
+                closeModal();
+            } else {
+                alert("Insufficient Balance!");
             }
         }
 
@@ -227,7 +253,7 @@
             document.getElementById('my-list').style.display = type === 'my' ? 'block' : 'none';
         }
 
-        window.onload = () => { startTimer(); syncHistory(); updateUI(); };
+        window.onload = () => { startTimer(); syncHistory(); syncUserBalance(); };
     </script>
 </body>
 </html>
