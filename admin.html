@@ -38,7 +38,7 @@
 <body>
 
 <div class="admin-wrapper">
-    <h2><i class="fa-solid fa-user-shield"></i> BDG Master Admin <span class="server-tag">SERVER ACTIVE</span></h2>
+    <h2><i class="fa-solid fa-user-shield"></i> BDG Master Admin <span class="server-tag">SERVER SYNC</span></h2>
 
     <div class="live-status">
         <div class="status-box">
@@ -79,7 +79,7 @@
                     <tr><th>User ID</th><th>Bet</th><th>Amount</th><th>Status</th></tr>
                 </thead>
                 <tbody id="request-table">
-                    <tr><td colspan="4" style="text-align:center; color:#555; padding: 20px;">System is handling results automatically.</td></tr>
+                    <tr><td colspan="4" style="text-align:center; color:#555; padding: 20px;">Watching live synchronization...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -103,25 +103,35 @@
     let manualSelection = null;
     let lastProcessedPeriod = "";
 
+    // পিরিয়ড আইডি জেনারেশন (UTC - গেমের সাথে হুবহু মিল)
+    function generatePeriodID() {
+        const now = new Date();
+        const dateStr = now.getUTCFullYear().toString() + 
+                        (now.getUTCMonth() + 1).toString().padStart(2, '0') + 
+                        now.getUTCDate().toString().padStart(2, '0');
+        
+        const totalSeconds = (now.getUTCHours() * 3600) + (now.getUTCMinutes() * 60) + now.getUTCSeconds();
+        const periodNum = Math.floor(totalSeconds / 30);
+        return dateStr + periodNum.toString().padStart(4, '0');
+    }
+
     function startAdminSystem() {
         setInterval(() => {
             const now = new Date();
-            const seconds = now.getSeconds();
+            const seconds = now.getUTCSeconds();
             const remaining = (seconds >= 30) ? 60 - seconds : 30 - seconds;
             
-            const dateStr = now.toISOString().slice(0, 10).replace(/-/g, "");
-            const currentPeriod = dateStr + Math.floor(((now.getHours() * 3600) + (now.getMinutes() * 60) + seconds) / 30);
+            const currentPeriod = generatePeriodID();
             
             document.getElementById('admin-period').innerText = currentPeriod;
             document.getElementById('admin-timer').innerText = "00:" + (remaining < 10 ? "0" + remaining : remaining);
 
-            // ১. টাইমার যখন ২ সেকেন্ডে আসবে, তখন রেজাল্ট ডাটাবেসে পুশ করবে
+            // ২ সেকেন্ড বাকি থাকতে রেজাল্ট পুশ করা (সবাই যাতে একই রেজাল্ট পায়)
             if (remaining === 2 && lastProcessedPeriod !== currentPeriod) {
                 lastProcessedPeriod = currentPeriod;
-                processFinalResult();
+                processFinalResult(currentPeriod);
             }
 
-            // লক ওয়ার্নিং
             if(remaining <= 5) {
                 document.getElementById('lock-msg').style.display = 'block';
             } else {
@@ -130,46 +140,42 @@
         }, 1000);
     }
 
-    // রেজাল্ট প্রসেস করার ফাংশন (অটো + ম্যানুয়াল)
-    function processFinalResult() {
+    function processFinalResult(pID) {
         let finalNum;
         if (manualSelection !== null) {
             finalNum = manualSelection;
-            document.getElementById('sync-status').innerHTML = `<span style="color:#ffc107;">🔥 Manual Result Sent: ${finalNum}</span>`;
+            document.getElementById('sync-status').innerHTML = `<span style="color:#ffc107;">🔥 Sent Manual: ${finalNum}</span>`;
         } else {
             finalNum = Math.floor(Math.random() * 10);
-            document.getElementById('sync-status').innerHTML = `<span style="color:#4caf50;">✅ Auto Result Sent: ${finalNum}</span>`;
+            document.getElementById('sync-status').innerHTML = `<span style="color:#4caf50;">✅ Sent Auto: ${finalNum}</span>`;
         }
 
-        // ডাটাবেসে পাঠানো
         database.ref('gameControl/currentResult').set({
             number: finalNum,
-            period: document.getElementById('admin-period').innerText,
+            period: pID,
             time: Date.now()
         });
 
-        // রাউন্ড শেষে ম্যানুয়াল সিলেকশন রিসেট
-        setTimeout(() => {
-            clearManual();
-        }, 3000);
+        setTimeout(clearManual, 3000);
     }
 
     function setManualResult(num) {
-        const remaining = parseInt(document.getElementById('admin-timer').innerText.split(":")[1]);
+        const timerText = document.getElementById('admin-timer').innerText;
+        const remaining = parseInt(timerText.split(":")[1]);
         if(remaining <= 5) {
-            alert("Time over! Wait for next round.");
+            alert("Too late! Wait for next round.");
             return;
         }
         manualSelection = num;
         document.querySelectorAll('.num-btn').forEach(b => b.classList.remove('active'));
         document.getElementById('btn-' + num).classList.add('active');
-        document.getElementById('sync-status').innerHTML = `<span style="color:#ffc107;">Selected: ${num} (Will be sent at 00:02)</span>`;
+        document.getElementById('sync-status').innerHTML = `<span style="color:#ffc107;">Queued: ${num}</span>`;
     }
 
     function clearManual() {
         manualSelection = null;
         document.querySelectorAll('.num-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById('sync-status').innerHTML = `<span style="color:#4caf50;">✅ Ready for Next Round</span>`;
+        document.getElementById('sync-status').innerHTML = `<span style="color:#4caf50;">✅ System Ready</span>`;
     }
 
     window.onload = startAdminSystem;
