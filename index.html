@@ -13,9 +13,12 @@
         body { background-color: #1a1a1a; color: white; display: flex; justify-content: center; min-height: 100vh; }
         .container { width: 375px; background: #1a1a1a; min-height: 100vh; position: relative; }
 
+        /* Loader */
+        #loading-screen { position: fixed; top: 0; width: 375px; height: 100%; background: #1a1a1a; display: flex; justify-content: center; align-items: center; z-index: 1000; }
+
         /* Auth Screen Styling */
-        #auth-screen { padding: 30px; display: flex; flex-direction: column; justify-content: center; height: 100vh; }
-        .auth-box { background: #222; padding: 25px; border-radius: 20px; border: 1px solid #333; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        #auth-screen { padding: 30px; display: none; flex-direction: column; justify-content: center; height: 100vh; }
+        .auth-box { background: #222; padding: 25px; border-radius: 20px; border: 1px solid #333; }
         h2 { text-align: center; margin-bottom: 20px; color: #ffc107; }
         input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 10px; border: 1px solid #444; background: #333; color: white; outline: none; }
         .btn-main { width: 100%; padding: 12px; border: none; border-radius: 10px; background: #ffc107; color: #000; font-weight: bold; cursor: pointer; margin-top: 10px; }
@@ -27,23 +30,22 @@
         .user-info { display: flex; align-items: center; gap: 10px; }
         .user-info i { font-size: 24px; color: #ffc107; }
         
-        .promo-banner { margin: 15px; height: 150px; background: linear-gradient(45deg, #d32f2f, #ffc107); border-radius: 15px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 20px; text-shadow: 2px 2px 5px rgba(0,0,0,0.3); }
+        .promo-banner { margin: 15px; height: 120px; background: linear-gradient(45deg, #d32f2f, #ffc107); border-radius: 15px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; }
         
         .game-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 15px; }
-        .game-card { background: #222; border-radius: 15px; padding: 20px; text-align: center; border: 1px solid #333; cursor: pointer; transition: 0.3s; }
-        .game-card:active { transform: scale(0.95); }
+        .game-card { background: #222; border-radius: 15px; padding: 20px; text-align: center; border: 1px solid #333; cursor: pointer; }
         .game-card i { font-size: 40px; color: #ffc107; margin-bottom: 10px; }
-        .game-card h3 { font-size: 16px; }
 
         .nav-bar { position: fixed; bottom: 0; width: 375px; background: #222; display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #333; }
-        .nav-item { color: #888; text-align: center; font-size: 12px; cursor: pointer; }
+        .nav-item { color: #888; text-align: center; font-size: 12px; }
         .nav-item.active { color: #ffc107; }
-        .nav-item i { font-size: 20px; display: block; margin-bottom: 3px; }
     </style>
 </head>
 <body>
 
     <div class="container">
+        <div id="loading-screen"><i class="fas fa-spinner fa-spin fa-2x" style="color: #ffc107;"></i></div>
+
         <div id="auth-screen">
             <div class="auth-box">
                 <h2 id="auth-title">Login</h2>
@@ -59,49 +61,36 @@
                 <div class="user-info">
                     <i class="fa-solid fa-circle-user"></i>
                     <div>
-                        <p id="user-id-display" style="font-size: 12px; color: #aaa;">ID: Loading...</p>
+                        <p id="user-id-display" style="font-size: 11px; color: #aaa;">ID: --</p>
                         <h4 id="user-balance-display">₹ 0.00</h4>
                     </div>
                 </div>
-                <button onclick="logout()" style="background: none; border: none; color: #f44336; font-size: 18px;"><i class="fa-solid fa-right-from-bracket"></i></button>
+                <button onclick="logout()" style="background: none; border: none; color: #f44336;"><i class="fa-solid fa-right-from-bracket fa-lg"></i></button>
             </header>
 
-            <div class="promo-banner">
-                WIN BIG ON WINGO 30S
-            </div>
+            <div class="promo-banner">WINGO 30S LIVE</div>
 
             <div class="game-grid">
                 <div class="game-card" onclick="location.href='wingo.html'">
                     <i class="fa-solid fa-gamepad"></i>
                     <h3>WinGo 30s</h3>
-                    <p style="font-size: 10px; color: #4caf50;">● Live Now</p>
+                    <p style="font-size: 10px; color: #4caf50;">● Online</p>
                 </div>
-                <div class="game-card">
+                <div class="game-card" onclick="alert('Coming Soon')">
                     <i class="fa-solid fa-dice"></i>
                     <h3>TrX Hash</h3>
-                    <p style="font-size: 10px; color: #aaa;">Coming Soon</p>
-                </div>
-                <div class="game-card">
-                    <i class="fa-solid fa-trophy"></i>
-                    <h3>Daily Tasks</h3>
-                </div>
-                <div class="game-card">
-                    <i class="fa-solid fa-envelope-open-text"></i>
-                    <h3>Promotions</h3>
                 </div>
             </div>
 
             <nav class="nav-bar">
-                <div class="nav-item active"><i class="fa-solid fa-house"></i>Home</div>
-                <div class="nav-item" onclick="alert('Coming Soon')"><i class="fa-solid fa-wallet"></i>Wallet</div>
-                <div class="nav-item" onclick="alert('Contact Support')"><i class="fa-solid fa-headset"></i>Support</div>
-                <div class="nav-item" onclick="alert('Profile Settings')"><i class="fa-solid fa-user"></i>Profile</div>
+                <div class="nav-item active"><i class="fa-solid fa-house"></i><br>Home</div>
+                <div class="nav-item"><i class="fa-solid fa-wallet"></i><br>Wallet</div>
+                <div class="nav-item"><i class="fa-solid fa-user"></i><br>Profile</div>
             </nav>
         </div>
     </div>
 
     <script>
-        // Firebase Configuration
         const firebaseConfig = {
             apiKey: "AIzaSyD2It_WJyq3VzjGFE0tqlm_Wac7CHEb2LI",
             authDomain: "bdg-game-35af2.firebaseapp.com",
@@ -125,8 +114,8 @@
         }
 
         async function handleAuth() {
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value.trim();
 
             if(!email || !password) return alert("Please fill all fields");
 
@@ -135,29 +124,34 @@
                     await auth.signInWithEmailAndPassword(email, password);
                 } else {
                     const res = await auth.createUserWithEmailAndPassword(email, password);
-                    // নতুন ইউজার রেজিস্টার করলে ডাটাবেসে ব্যালেন্স সেট করা
-                    const uID = "UID" + Math.floor(1000 + Math.random() * 9000);
+                    const generatedUID = "UID" + Math.floor(100000 + Math.random() * 900000);
+                    // ডাটাবেসে ইউজার ডাটা তৈরি
                     await database.ref('users/' + res.user.uid).set({
                         email: email,
-                        uID: uID,
-                        balance: 100.00 // জয়েনিং বোনাস ১০০ টাকা (ঐচ্ছিক)
+                        uID: generatedUID,
+                        balance: 0.00
                     });
                 }
             } catch (error) {
-                alert(error.message);
+                alert("Error: " + error.message);
             }
         }
 
-        // ইউজার লগইন আছে কি না তা চেক করা
+        // লগইন স্ট্যাটাস চেক
         auth.onAuthStateChanged(user => {
+            const loading = document.getElementById('loading-screen');
+            const authScreen = document.getElementById('auth-screen');
+            const lobbyScreen = document.getElementById('lobby-screen');
+
             if (user) {
-                document.getElementById('auth-screen').style.display = 'none';
-                document.getElementById('lobby-screen').style.display = 'block';
+                authScreen.style.display = 'none';
+                lobbyScreen.style.display = 'block';
                 loadUserData(user.uid);
             } else {
-                document.getElementById('auth-screen').style.display = 'flex';
-                document.getElementById('lobby-screen').style.display = 'none';
+                authScreen.style.display = 'flex';
+                lobbyScreen.style.display = 'none';
             }
+            loading.style.display = 'none'; // Firebase চেক শেষ হলে লোডার বন্ধ
         });
 
         function loadUserData(uid) {
@@ -166,14 +160,19 @@
                 if (data) {
                     document.getElementById('user-id-display').innerText = "ID: " + data.uID;
                     document.getElementById('user-balance-display').innerText = "₹ " + parseFloat(data.balance).toFixed(2);
-                    // গেম পেজের জন্য uID সেভ করে রাখা
-                    localStorage.setItem('uID', uid); 
+                    localStorage.setItem('myUID', uid); // wingo.html এর জন্য সঠিক UID সেভ
+                } else {
+                    // যদি ডাটা না থাকে (পুরানো ইউজারদের জন্য)
+                    const genUID = "UID" + Math.floor(100000 + Math.random() * 900000);
+                    database.ref('users/' + uid).update({ uID: genUID, balance: 0.00 });
                 }
             });
         }
 
         function logout() {
-            auth.signOut();
+            if(confirm("Are you sure you want to logout?")) {
+                auth.signOut();
+            }
         }
     </script>
 </body>
