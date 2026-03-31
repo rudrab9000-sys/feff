@@ -111,7 +111,7 @@
         const database = firebase.database();
 
         let balance = parseFloat(localStorage.getItem('bal')) || 1000.00;
-        let gameHistory = JSON.parse(localStorage.getItem('gameH')) || [];
+        let gameHistory = []; // এখন এটি ডাটাবেস থেকে আসবে
         let myHistory = JSON.parse(localStorage.getItem('myH')) || [];
         let isLockdown = false;
         let selectedBet = "";
@@ -124,6 +124,17 @@
             const totalSeconds = (now.getUTCHours() * 3600) + (now.getUTCMinutes() * 60) + now.getUTCSeconds();
             const periodNum = Math.floor(totalSeconds / 30);
             return dateStr + periodNum.toString().padStart(4, '0');
+        }
+
+        // রিয়েল-টাইম গ্লোবাল হিস্ট্রি সিঙ্ক
+        function syncGlobalHistory() {
+            database.ref('gameControl/history').orderByKey().limitToLast(20).on('value', (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    gameHistory = Object.values(data).reverse();
+                    renderTables();
+                }
+            });
         }
 
         function startTimer() {
@@ -145,57 +156,50 @@
                     document.getElementById('timer').classList.remove('lockdown');
                 }
 
-                // টাইমার যখন ঠিক ০ হবে, তার ১.৫ সেকেন্ড পর রেজাল্ট চেক করবে
-                if (s === 0) {
-                    setTimeout(() => fetchAndGenerateResult(pID), 1500);
+                // যখন নতুন পিরিয়ড শুরু হয় (s === 29 বা 59)
+                if (s === 29 || s === 59) {
+                    // গত পিরিয়ডের জন্য উইন/লস চেক
+                    const lastPID = (parseInt(pID) - 1).toString();
+                    setTimeout(() => checkBetResult(lastPID), 2000);
                 }
             }, 1000);
         }
 
-        async function fetchAndGenerateResult(pID) {
+        async function checkBetResult(pID) {
             const snapshot = await database.ref('gameControl/currentResult').get();
-            let num;
-            const data = snapshot.val();
+            if (snapshot.exists() && snapshot.val().period === pID) {
+                const data = snapshot.val();
+                const num = parseInt(data.number);
+                const size = num <= 4 ? "Small" : "Big";
+                const color = (num === 0 || num === 5) ? "Violet" : (num % 2 === 0 ? "Red" : "Green");
 
-            // ডাটাবেসে এই পিরিয়ডের রেজাল্ট থাকলে সেটি নেবে
-            if (snapshot.exists() && data.period === pID) {
-                num = parseInt(data.number);
-            } else {
-                // সিঙ্ক না হলে পিরিয়ড আইডি ভিত্তিক একটি নম্বর জেনারেট করবে যাতে সবার ফোনে এক থাকে
-                let seed = parseInt(pID.slice(-4));
-                num = (seed * 7 + 13) % 10;
-            }
-
-            const size = num <= 4 ? "Small" : "Big";
-            const color = (num === 0 || num === 5) ? "Violet" : (num % 2 === 0 ? "Red" : "Green");
-            
-            const resObj = { p: pID, n: num, s: size, c: color };
-            gameHistory.unshift(resObj);
-            if(gameHistory.length > 20) gameHistory.pop();
-
-            let winTotal = 0, hasBet = false, winFlag = false;
-            myHistory.forEach(bet => {
-                if(bet.p == pID && bet.res === "Processing") {
-                    hasBet = true;
-                    let win = (bet.sel === color || bet.sel === num.toString() || bet.sel === size);
-                    if(win) {
-                        let mult = isNaN(bet.sel) ? 1.96 : 9;
-                        winTotal += bet.amt * 0.98 * mult;
-                        bet.res = "WIN"; bet.color = "#4caf50"; winFlag = true;
-                    } else {
-                        bet.res = "LOSS"; bet.color = "#f44336";
+                let winTotal = 0, hasBet = false, winFlag = false;
+                
+                myHistory.forEach(bet => {
+                    if(bet.p == pID && bet.res === "Processing") {
+                        hasBet = true;
+                        let win = (bet.sel === color || bet.sel === num.toString() || bet.sel === size);
+                        if(win) {
+                            let mult = isNaN(bet.sel) ? 1.96 : 9;
+                            winTotal += bet.amt * 0.98 * mult;
+                            bet.res = "WIN"; bet.color = "#4caf50"; winFlag = true;
+                        } else {
+                            bet.res = "LOSS"; bet.color = "#f44336";
+                        }
                     }
-                }
-            });
+                });
 
-            if(hasBet) { balance += winTotal; showResultPopup(winFlag, winTotal); }
-            updateUI();
+                if(hasBet) { 
+                    balance += winTotal; 
+                    showResultPopup(winFlag, winTotal); 
+                    updateUI();
+                }
+            }
         }
 
         function updateUI() {
             document.getElementById('balance').innerText = balance.toFixed(2);
             localStorage.setItem('bal', balance);
-            localStorage.setItem('gameH', JSON.stringify(gameHistory));
             localStorage.setItem('myH', JSON.stringify(myHistory));
             renderTables();
         }
@@ -205,6 +209,7 @@
                 let ballClass = g.n === 0 ? "bg-n0" : (g.n === 5 ? "bg-n5" : (g.n % 2 === 0 ? "bg-red" : "bg-green"));
                 return `<tr><td>${g.p}</td><td><div class="res-ball ${ballClass}">${g.n}</div></td><td>${g.s}</td><td>${g.c}</td></tr>`;
             }).join('');
+            
             document.getElementById('my-records').innerHTML = myHistory.map(h => 
                 `<tr><td>${h.p}</td><td>${h.sel}</td><td>${h.amt}</td><td style="color:${h.color}">${h.res}</td></tr>`
             ).join('');
@@ -212,29 +217,41 @@
 
         function openBet(val) { if(isLockdown) return; selectedBet = val; document.getElementById('bet-title').innerText = "Select: " + val; document.getElementById('modal').style.display = 'flex'; }
         function closeModal() { document.getElementById('modal').style.display = 'none'; }
+        
         function confirmBet() {
             let amt = parseFloat(document.getElementById('custom-amt').value);
             let currentP = document.getElementById('period').innerText;
             if (balance >= amt && amt > 0) {
                 balance -= amt;
                 myHistory.unshift({ p: currentP, sel: selectedBet, amt: amt, res: "Processing", color: "#ffc107" });
+                if(myHistory.length > 30) myHistory.pop();
                 updateUI(); closeModal();
+            } else {
+                alert("Insufficient Balance!");
             }
         }
+
         function showResultPopup(win, amt) {
             document.getElementById('res-msg').innerText = win ? "Congratulations" : "Better Luck Next Time";
             document.getElementById('res-amount').innerText = (win ? "+ ₹" : "₹") + amt.toFixed(2);
             document.getElementById('res-popup').style.display = 'flex';
             setTimeout(() => document.getElementById('res-card').classList.add('show'), 10);
         }
+
         function closeResult() { document.getElementById('res-card').classList.remove('show'); setTimeout(() => document.getElementById('res-popup').style.display = 'none', 300); }
+        
         function switchTab(type, el) {
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             el.classList.add('active');
             document.getElementById('game-list').style.display = type === 'game' ? 'block' : 'none';
             document.getElementById('my-list').style.display = type === 'my' ? 'block' : 'none';
         }
-        window.onload = () => { startTimer(); updateUI(); };
+
+        window.onload = () => { 
+            startTimer(); 
+            syncGlobalHistory(); 
+            updateUI(); 
+        };
     </script>
 </body>
 </html>
