@@ -62,6 +62,7 @@
         <header class="top-header">
             <i class="fa-solid fa-chevron-left" onclick="history.back()"></i>
             <h3>Wallet</h3>
+            <span id="display-uid" style="font-size: 10px; color: #888;">ID: --</span>
         </header>
 
         <div class="balance-card">
@@ -96,7 +97,9 @@
                         <th>Status</th>
                     </tr>
                 </thead>
-                <tbody id="history-list"></tbody>
+                <tbody id="history-list">
+                    <tr><td colspan='3' style='text-align:center; padding:20px; color:#555;'>Loading history...</td></tr>
+                </tbody>
             </table>
         </div>
 
@@ -109,7 +112,6 @@
     </div>
 
     <script>
-        // --- Firebase Configuration ---
         const firebaseConfig = {
             apiKey: "AIzaSyD2It_WJyq3VzjGFE0tqlm_Wac7CHEb2LI",
             authDomain: "bdg-game-35af2.firebaseapp.com",
@@ -122,19 +124,26 @@
 
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
+
+        // ইউজার আইডি লোড (Wingo-র সাথে সেম আইডি ব্যবহার হবে)
+        let userID = localStorage.getItem('uID') || "UID" + Math.floor(1000 + Math.random() * 9000);
+        localStorage.setItem('uID', userID);
+        document.getElementById('display-uid').innerText = "ID: " + userID;
+
+        let currentBalance = 0;
         let currentAction = "";
 
-        // ডাটা লোড করার ফাংশন
-        function loadWalletData() {
-            // লোকাল ব্যালেন্স দেখানো
-            let bal = localStorage.getItem('bal') || "0.00";
-            document.getElementById('wall-bal').innerText = parseFloat(bal).toFixed(2);
+        // রিয়েল-টাইম ডাটা লোড ফাংশন
+        function initWallet() {
+            // ১. রিয়েল-টাইম ব্যালেন্স সিঙ্ক
+            database.ref('users/' + userID + '/balance').on('value', (snapshot) => {
+                currentBalance = snapshot.val() || 0.00;
+                document.getElementById('wall-bal').innerText = parseFloat(currentBalance).toFixed(2);
+                localStorage.setItem('bal', currentBalance);
+            });
 
-            const user = JSON.parse(localStorage.getItem('userData'));
-            if(!user) return;
-
-            // Firebase থেকে শুধুমাত্র এই ইউজারের হিস্ট্রি লোড করা
-            database.ref('allRequests').orderByChild('phone').equalTo(user.phone).on('value', (snapshot) => {
+            // ২. এই নির্দিষ্ট ইউজারের রিকোয়েস্ট হিস্ট্রি লোড করা
+            database.ref('allRequests').orderByChild('uid').equalTo(userID).on('value', (snapshot) => {
                 const historyList = document.getElementById('history-list');
                 historyList.innerHTML = "";
                 
@@ -144,7 +153,7 @@
                     return;
                 }
 
-                // ডাটাগুলোকে অ্যারে বানিয়ে উল্টে দেওয়া (নতুনগুলো উপরে দেখানোর জন্য)
+                // অবজেক্টকে অ্যারেতে রূপান্তর করে রিভার্স করা (নতুনগুলো উপরে)
                 const requests = Object.values(data).reverse();
 
                 requests.forEach(req => {
@@ -174,32 +183,30 @@
         function submitRequest() {
             const amt = parseFloat(document.getElementById('req-amount').value);
             const info = document.getElementById('req-info').value;
-            const user = JSON.parse(localStorage.getItem('userData'));
-            const currentBal = parseFloat(localStorage.getItem('bal') || 0);
 
-            if(!user) return alert("Please Login!");
             if(isNaN(amt) || amt < 100) return alert("Minimum amount is ₹100!");
-            if(currentAction === 'Withdraw' && amt > currentBal) return alert("Insufficient balance!");
+            if(currentAction === 'Withdraw' && amt > currentBalance) return alert("Insufficient balance!");
             if(info.length < 5) return alert("Enter valid details!");
 
             const btn = document.getElementById('submit-btn');
             btn.disabled = true;
             btn.innerText = "Processing...";
 
-            // Firebase-এ ডাটা পাঠানো
+            // Firebase-এ রিকোয়েস্ট পাঠানো
             const newReqRef = database.ref('allRequests').push();
             newReqRef.set({
-                id: Date.now(),
-                phone: user.phone,
+                uid: userID,
                 type: currentAction,
                 amount: amt,
                 bankInfo: info,
                 status: 'Pending',
                 timestamp: firebase.database.ServerValue.TIMESTAMP
             }).then(() => {
-                alert(currentAction + " Request Sent to Online Admin! ⏳");
+                alert(currentAction + " Request Sent to Admin! ⏳");
                 btn.disabled = false;
                 btn.innerText = "Submit Request";
+                document.getElementById('req-amount').value = "";
+                document.getElementById('req-info').value = "";
                 closeForm();
             }).catch(err => {
                 alert("Error: " + err.message);
@@ -207,7 +214,7 @@
             });
         }
 
-        window.onload = loadWalletData;
+        window.onload = initWallet;
     </script>
 </body>
 </html>
