@@ -103,7 +103,6 @@
     let manualSelection = null;
     let lastProcessedPeriod = "";
 
-    // পিরিয়ড আইডি জেনারেশন (UTC - গেমের সাথে হুবহু মিল)
     function generatePeriodID() {
         const now = new Date();
         const dateStr = now.getUTCFullYear().toString() + 
@@ -126,8 +125,8 @@
             document.getElementById('admin-period').innerText = currentPeriod;
             document.getElementById('admin-timer').innerText = "00:" + (remaining < 10 ? "0" + remaining : remaining);
 
-            // ২ সেকেন্ড বাকি থাকতে রেজাল্ট পুশ করা (সবাই যাতে একই রেজাল্ট পায়)
-            if (remaining === 2 && lastProcessedPeriod !== currentPeriod) {
+            // পরিবর্তন: ৩ সেকেন্ড বাকি থাকতেই রেজাল্ট ডাটাবেসে পাঠানো হবে
+            if (remaining === 3 && lastProcessedPeriod !== currentPeriod) {
                 lastProcessedPeriod = currentPeriod;
                 processFinalResult(currentPeriod);
             }
@@ -146,7 +145,9 @@
             finalNum = manualSelection;
             document.getElementById('sync-status').innerHTML = `<span style="color:#ffc107;">🔥 Sent Manual: ${finalNum}</span>`;
         } else {
-            finalNum = Math.floor(Math.random() * 10);
+            // পিরিয়ড ভিত্তিক ফিক্সড র‍্যান্ডম লজিক (অ্যাডমিন অফ থাকলেও যাতে সিঙ্ক থাকে)
+            let seed = parseInt(pID.slice(-4));
+            finalNum = (seed * 7 + 13) % 10;
             document.getElementById('sync-status').innerHTML = `<span style="color:#4caf50;">✅ Sent Auto: ${finalNum}</span>`;
         }
 
@@ -162,20 +163,20 @@
     function setManualResult(num) {
         const timerText = document.getElementById('admin-timer').innerText;
         const remaining = parseInt(timerText.split(":")[1]);
-        if(remaining <= 5) {
-            alert("Too late! Wait for next round.");
+        if(remaining <= 6) { // ৫ সেকেন্ডের লকডাউনের আগেই সিলেক্ট করতে হবে
+            alert("Locking period... Wait for next round.");
             return;
         }
         manualSelection = num;
         document.querySelectorAll('.num-btn').forEach(b => b.classList.remove('active'));
         document.getElementById('btn-' + num).classList.add('active');
-        document.getElementById('sync-status').innerHTML = `<span style="color:#ffc107;">Queued: ${num}</span>`;
+        document.getElementById('sync-status').innerHTML = `<span style="color:#ffc107;">Queued Result: ${num}</span>`;
     }
 
     function clearManual() {
         manualSelection = null;
         document.querySelectorAll('.num-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById('sync-status').innerHTML = `<span style="color:#4caf50;">✅ System Ready</span>`;
+        document.getElementById('sync-status').innerHTML = `<span style="color:#4caf50;">✅ Ready for Next</span>`;
     }
 
     window.onload = startAdminSystem;
