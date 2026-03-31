@@ -116,13 +116,30 @@
         let isLockdown = false;
         let selectedBet = "";
 
+        // ১. পিরিয়ড আইডি জেনারেশন (UTC Time ব্যবহার করে যা কখনো থামবে না)
+        function generatePeriodID() {
+            const now = new Date();
+            const dateStr = now.getUTCFullYear().toString() + 
+                            (now.getUTCMonth() + 1).toString().padStart(2, '0') + 
+                            now.getUTCDate().toString().padStart(2, '0');
+            
+            const totalSeconds = (now.getUTCHours() * 3600) + (now.getUTCMinutes() * 60) + now.getUTCSeconds();
+            const periodNum = Math.floor(totalSeconds / 30);
+            return dateStr + periodNum.toString().padStart(4, '0');
+        }
+
+        // ২. রিয়েল-টাইম গ্লোবাল টাইমার
         function startTimer() {
             setInterval(() => {
                 const now = new Date();
-                const seconds = now.getSeconds();
+                const seconds = now.getUTCSeconds();
+                
+                // ৩০ সেকেন্ডের সাইকেল
                 const s = (seconds >= 30) ? 60 - seconds : 30 - seconds;
                 const pID = generatePeriodID();
+                
                 document.getElementById('period').innerText = pID;
+                document.getElementById('timer').innerText = "00:" + (s < 10 ? "0" + s : s);
 
                 if (s <= 5) { 
                     isLockdown = true; 
@@ -133,32 +150,21 @@
                     document.getElementById('timer').classList.remove('lockdown');
                 }
 
-                // টাইমার ০ হওয়ার ঠিক ১ সেকেন্ড আগে ডাটাবেস থেকে রেজাল্ট কল করবে
+                // টাইমার ১ সেকেন্ডে আসলে রেজাল্ট ফেচ করবে
                 if (s === 1) {
-                    setTimeout(() => fetchAndGenerateResult(pID), 1100);
+                    setTimeout(() => fetchAndGenerateResult(pID), 1200);
                 }
-
-                document.getElementById('timer').innerText = "00:" + (s < 10 ? "0" + s : s);
             }, 1000);
         }
 
-        function generatePeriodID() {
-            const now = new Date();
-            const dateStr = now.toISOString().slice(0, 10).replace(/-/g, "");
-            const totalSeconds = (now.getHours() * 3600) + (now.getMinutes() * 60) + now.getSeconds();
-            return dateStr + Math.floor(totalSeconds / 30);
-        }
-
-        // এটিই প্রধান ফাংশন যা সবার ফোনে একই রেজাল্ট নিশ্চিত করবে
         async function fetchAndGenerateResult(pID) {
-            // ডাটাবেসের currentResult পাথ থেকে নম্বর পড়া
             const snapshot = await database.ref('gameControl/currentResult').get();
             let num;
 
-            if (snapshot.exists()) {
+            // ডাটাবেসে এই পিরিয়ডের রেজাল্ট থাকলে সেটি নেবে, না থাকলে অটো র‍্যান্ডম
+            if (snapshot.exists() && snapshot.val().period === pID) {
                 num = parseInt(snapshot.val().number);
             } else {
-                // সেফটি মেজার: যদি ডাটাবেসে কিছু না থাকে তবেই কেবল র‍্যান্ডম (তবে অ্যাডমিন প্যানেল ওপেন থাকলে এটি হবে না)
                 num = Math.floor(Math.random() * 10);
             }
 
