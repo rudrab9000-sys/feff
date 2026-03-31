@@ -125,7 +125,7 @@
             document.getElementById('admin-period').innerText = currentPeriod;
             document.getElementById('admin-timer').innerText = "00:" + (remaining < 10 ? "0" + remaining : remaining);
 
-            // পরিবর্তন: ৩ সেকেন্ড বাকি থাকতেই রেজাল্ট ডাটাবেসে পাঠানো হবে
+            // ৩ সেকেন্ড বাকি থাকতেই রেজাল্ট এবং হিস্ট্রি আপডেট হবে
             if (remaining === 3 && lastProcessedPeriod !== currentPeriod) {
                 lastProcessedPeriod = currentPeriod;
                 processFinalResult(currentPeriod);
@@ -145,16 +145,27 @@
             finalNum = manualSelection;
             document.getElementById('sync-status').innerHTML = `<span style="color:#ffc107;">🔥 Sent Manual: ${finalNum}</span>`;
         } else {
-            // পিরিয়ড ভিত্তিক ফিক্সড র‍্যান্ডম লজিক (অ্যাডমিন অফ থাকলেও যাতে সিঙ্ক থাকে)
             let seed = parseInt(pID.slice(-4));
             finalNum = (seed * 7 + 13) % 10;
             document.getElementById('sync-status').innerHTML = `<span style="color:#4caf50;">✅ Sent Auto: ${finalNum}</span>`;
         }
 
+        const size = finalNum <= 4 ? "Small" : "Big";
+        const color = (finalNum === 0 || finalNum === 5) ? "Violet" : (finalNum % 2 === 0 ? "Red" : "Green");
+
+        // ১. কারেন্ট রেজাল্ট আপডেট
         database.ref('gameControl/currentResult').set({
             number: finalNum,
             period: pID,
             time: Date.now()
+        });
+
+        // ২. গ্লোবাল হিস্ট্রি আপডেট (এটিই ওয়েবসাইট বন্ধ থাকলেও হিস্ট্রি ধরে রাখবে)
+        database.ref('gameControl/history/' + pID).set({
+            p: pID,
+            n: finalNum,
+            s: size,
+            c: color
         });
 
         setTimeout(clearManual, 3000);
@@ -163,7 +174,7 @@
     function setManualResult(num) {
         const timerText = document.getElementById('admin-timer').innerText;
         const remaining = parseInt(timerText.split(":")[1]);
-        if(remaining <= 6) { // ৫ সেকেন্ডের লকডাউনের আগেই সিলেক্ট করতে হবে
+        if(remaining <= 6) {
             alert("Locking period... Wait for next round.");
             return;
         }
