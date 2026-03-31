@@ -12,7 +12,7 @@
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
         body { background: #0f0f0f; color: white; padding: 20px; }
-        .admin-wrapper { max-width: 1000px; margin: 0 auto; }
+        .admin-wrapper { max-width: 1200px; margin: 0 auto; }
         h2 { color: #ffc107; margin-bottom: 20px; text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px; }
         
         .live-status { background: #222; padding: 15px; border-radius: 12px; margin-bottom: 20px; display: flex; justify-content: space-around; align-items: center; border: 1px dashed #444; }
@@ -22,16 +22,21 @@
 
         .admin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         .card { background: #1a1a1a; padding: 20px; border-radius: 15px; border: 1px solid #333; margin-bottom: 20px; }
+        .full-card { grid-column: span 2; }
+        
         .btn-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-top: 15px; }
         .num-btn { padding: 15px 10px; border-radius: 8px; border: 1px solid #444; background: #222; color: white; cursor: pointer; font-weight: bold; transition: 0.3s; font-size: 16px; }
-        .num-btn:hover { border-color: #ffc107; }
         .num-btn.active { background: #ffc107; color: black; border-color: #ffc107; box-shadow: 0 0 15px rgba(255,193,7,0.4); }
         
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px; }
         th, td { padding: 12px; text-align: left; border-bottom: 1px solid #333; }
-        th { color: #888; }
+        th { color: #888; background: #222; }
+        
+        .approve-btn { background: #2e7d32; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; margin-right: 5px; }
+        .reject-btn { background: #d32f2f; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; }
+        
         .status-text { font-size: 14px; margin-top: 15px; text-align: center; display: block; font-weight: bold; }
-        .lock-warning { color: #f44336; font-size: 12px; margin-top: 5px; display: none; }
+        .lock-warning { color: #f44336; font-size: 12px; margin-top: 5px; display: none; text-align: center; }
         .server-tag { background: #4caf50; color: white; font-size: 10px; padding: 2px 8px; border-radius: 10px; margin-left: 10px; vertical-align: middle; }
     </style>
 </head>
@@ -51,11 +56,29 @@
         </div>
     </div>
 
+    <div class="card full-card">
+        <h3><i class="fa-solid fa-money-bill-transfer" style="color: #ffc107;"></i> Pending Deposit/Withdraw Requests</h3>
+        <div style="overflow-x: auto;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>User ID</th>
+                        <th>Type</th>
+                        <th>Amount</th>
+                        <th>Details/Info</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="req-table-body">
+                    <tr><td colspan="5" style="text-align:center; color:#555; padding:20px;">No pending requests...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
     <div class="admin-grid">
         <div class="card">
             <h3><i class="fa-solid fa-gamepad"></i> Next Result Control</h3>
-            <p style="font-size: 11px; color: #888; margin-top: 5px;">নম্বর সিলেক্ট করলে সেটি যাবে, না করলে অটো র‍্যান্ডম হবে।</p>
-            
             <div class="btn-grid">
                 <script>
                     for(let i=0; i<=9; i++) {
@@ -63,25 +86,15 @@
                     }
                 </script>
             </div>
-            
             <span id="sync-status" class="status-text">Checking Database...</span>
             <p id="lock-msg" class="lock-warning">⚠️ Syncing Result for next round...</p>
-            
-            <button onclick="clearManual()" style="margin-top:20px; width:100%; padding:12px; background:none; border:1px solid #ffc107; color:#ffc107; border-radius:8px; cursor:pointer; font-weight:bold;">
-                <i class="fa-solid fa-rotate"></i> Reset to Auto
-            </button>
+            <button onclick="clearManual()" style="margin-top:20px; width:100%; padding:12px; background:none; border:1px solid #ffc107; color:#ffc107; border-radius:8px; cursor:pointer; font-weight:bold;">Reset to Auto</button>
         </div>
 
         <div class="card">
-            <h3><i class="fa-solid fa-bell"></i> Live Activity</h3>
-            <table>
-                <thead>
-                    <tr><th>User ID</th><th>Bet</th><th>Amount</th><th>Status</th></tr>
-                </thead>
-                <tbody id="request-table">
-                    <tr><td colspan="4" style="text-align:center; color:#555; padding: 20px;">Watching live synchronization...</td></tr>
-                </tbody>
-            </table>
+            <h3><i class="fa-solid fa-users"></i> Online Users Balance</h3>
+            <div id="user-list" style="max-height: 300px; overflow-y: auto; font-size: 13px;">
+                </div>
         </div>
     </div>
 </div>
@@ -103,94 +116,127 @@
     let manualSelection = null;
     let lastProcessedPeriod = "";
 
+    // পিরিয়ড আইডি জেনারেট
     function generatePeriodID() {
         const now = new Date();
-        const dateStr = now.getUTCFullYear().toString() + 
-                        (now.getUTCMonth() + 1).toString().padStart(2, '0') + 
-                        now.getUTCDate().toString().padStart(2, '0');
-        
+        const dateStr = now.getUTCFullYear().toString() + (now.getUTCMonth() + 1).toString().padStart(2, '0') + now.getUTCDate().toString().padStart(2, '0');
         const totalSeconds = (now.getUTCHours() * 3600) + (now.getUTCMinutes() * 60) + now.getUTCSeconds();
-        const periodNum = Math.floor(totalSeconds / 30);
-        return dateStr + periodNum.toString().padStart(4, '0');
+        return dateStr + Math.floor(totalSeconds / 30).toString().padStart(4, '0');
     }
 
+    // ১. রিকোয়েস্ট সিঙ্ক (পেন্ডিং রিকোয়েস্টগুলো দেখাবে)
+    function syncAllRequests() {
+        database.ref('allRequests').on('value', (snapshot) => {
+            const tableBody = document.getElementById('req-table-body');
+            tableBody.innerHTML = "";
+            const data = snapshot.val();
+            
+            if(!data) {
+                tableBody.innerHTML = "<tr><td colspan='5' style='text-align:center; color:#555;'>No requests found</td></tr>";
+                return;
+            }
+
+            Object.keys(data).forEach(key => {
+                const req = data[key];
+                if(req.status === 'Pending') {
+                    let row = `<tr>
+                        <td><b>${req.uid}</b></td>
+                        <td style="color:${req.type === 'Deposit' ? '#4caf50' : '#ffc107'}">${req.type}</td>
+                        <td>₹${req.amount}</td>
+                        <td style="font-size:10px;">${req.bankInfo}</td>
+                        <td>
+                            <button class="approve-btn" onclick="handleRequest('${key}', '${req.uid}', ${req.amount}, '${req.type}', 'Approved')">Approve</button>
+                            <button class="reject-btn" onclick="handleRequest('${key}', '${req.uid}', ${req.amount}, '${req.type}', 'Rejected')">Reject</button>
+                        </td>
+                    </tr>`;
+                    tableBody.innerHTML += row;
+                }
+            });
+        });
+    }
+
+    // ২. অ্যাপ্রুভ বা রিজেক্ট লজিক
+    async function handleRequest(key, uid, amt, type, status) {
+        if(status === 'Approved') {
+            const userRef = database.ref('users/' + uid + '/balance');
+            const snapshot = await userRef.get();
+            let currentBal = snapshot.val() || 0;
+
+            if(type === 'Deposit') {
+                await userRef.set(currentBal + amt);
+            } else {
+                if(currentBal < amt) return alert("User has insufficient balance to withdraw!");
+                await userRef.set(currentBal - amt);
+            }
+        }
+        
+        // রিকোয়েস্ট স্ট্যাটাস আপডেট
+        database.ref('allRequests/' + key).update({ status: status });
+        alert("Request " + status);
+    }
+
+    // ৩. ইউজার লিস্ট সিঙ্ক
+    function syncUsers() {
+        database.ref('users').on('value', (snapshot) => {
+            const userList = document.getElementById('user-list');
+            userList.innerHTML = "";
+            snapshot.forEach(child => {
+                const u = child.val();
+                userList.innerHTML += `<div style="padding:8px; border-bottom:1px solid #333; display:flex; justify-content:space-between;">
+                    <span>ID: ${u.id}</span>
+                    <span style="color:#ffc107;">₹${parseFloat(u.balance).toFixed(2)}</span>
+                </div>`;
+            });
+        });
+    }
+
+    // ৪. গেম টাইমার এবং অটো রেজাল্ট সিস্টেম
     function startAdminSystem() {
         setInterval(() => {
             const now = new Date();
             const seconds = now.getUTCSeconds();
             const remaining = (seconds >= 30) ? 60 - seconds : 30 - seconds;
-            
             const currentPeriod = generatePeriodID();
             
             document.getElementById('admin-period').innerText = currentPeriod;
             document.getElementById('admin-timer').innerText = "00:" + (remaining < 10 ? "0" + remaining : remaining);
 
-            // ৩ সেকেন্ড বাকি থাকতেই রেজাল্ট এবং হিস্ট্রি আপডেট হবে
             if (remaining === 3 && lastProcessedPeriod !== currentPeriod) {
                 lastProcessedPeriod = currentPeriod;
                 processFinalResult(currentPeriod);
             }
 
-            if(remaining <= 5) {
-                document.getElementById('lock-msg').style.display = 'block';
-            } else {
-                document.getElementById('lock-msg').style.display = 'none';
-            }
+            document.getElementById('lock-msg').style.display = (remaining <= 5) ? 'block' : 'none';
         }, 1000);
     }
 
     function processFinalResult(pID) {
-        let finalNum;
-        if (manualSelection !== null) {
-            finalNum = manualSelection;
-            document.getElementById('sync-status').innerHTML = `<span style="color:#ffc107;">🔥 Sent Manual: ${finalNum}</span>`;
-        } else {
-            let seed = parseInt(pID.slice(-4));
-            finalNum = (seed * 7 + 13) % 10;
-            document.getElementById('sync-status').innerHTML = `<span style="color:#4caf50;">✅ Sent Auto: ${finalNum}</span>`;
-        }
-
+        let finalNum = (manualSelection !== null) ? manualSelection : (parseInt(pID.slice(-4)) * 7 + 13) % 10;
         const size = finalNum <= 4 ? "Small" : "Big";
         const color = (finalNum === 0 || finalNum === 5) ? "Violet" : (finalNum % 2 === 0 ? "Red" : "Green");
 
-        // ১. কারেন্ট রেজাল্ট আপডেট
-        database.ref('gameControl/currentResult').set({
-            number: finalNum,
-            period: pID,
-            time: Date.now()
-        });
-
-        // ২. গ্লোবাল হিস্ট্রি আপডেট (এটিই ওয়েবসাইট বন্ধ থাকলেও হিস্ট্রি ধরে রাখবে)
-        database.ref('gameControl/history/' + pID).set({
-            p: pID,
-            n: finalNum,
-            s: size,
-            c: color
-        });
-
-        setTimeout(clearManual, 3000);
+        database.ref('gameControl/history/' + pID).set({ p: pID, n: finalNum, s: size, c: color });
+        clearManual();
     }
 
     function setManualResult(num) {
-        const timerText = document.getElementById('admin-timer').innerText;
-        const remaining = parseInt(timerText.split(":")[1]);
-        if(remaining <= 6) {
-            alert("Locking period... Wait for next round.");
-            return;
-        }
         manualSelection = num;
         document.querySelectorAll('.num-btn').forEach(b => b.classList.remove('active'));
         document.getElementById('btn-' + num).classList.add('active');
-        document.getElementById('sync-status').innerHTML = `<span style="color:#ffc107;">Queued Result: ${num}</span>`;
+        document.getElementById('sync-status').innerText = "Queued: " + num;
     }
 
     function clearManual() {
         manualSelection = null;
         document.querySelectorAll('.num-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById('sync-status').innerHTML = `<span style="color:#4caf50;">✅ Ready for Next</span>`;
+        document.getElementById('sync-status').innerText = "Ready for Next";
     }
 
-    window.onload = startAdminSystem;
+    window.onload = () => {
+        startAdminSystem();
+        syncAllRequests();
+        syncUsers();
+    };
 </script>
 
 </body>
