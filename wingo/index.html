@@ -42,9 +42,6 @@
         .bg-red { background-color: #f44336; } .bg-green { background-color: #4caf50; }
         .bg-n0 { background: linear-gradient(135deg, #9c27b0 50%, #f44336 50%); }
         .bg-n5 { background: linear-gradient(135deg, #9c27b0 50%, #4caf50 50%); }
-        .tag { padding: 3px 10px; border-radius: 5px; font-size: 11px; font-weight: bold; color: white; }
-        .tag-big { background-color: #ffa000; } .tag-small { background-color: #3a7bd5; }
-        .toast { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.9); color: white; padding: 12px 25px; border-radius: 30px; font-size: 14px; z-index: 1000; display: none; }
         .res-popup { display: none; position: fixed; top: 0; width: 375px; height: 100%; background: rgba(0,0,0,0.9); z-index: 200; flex-direction: column; justify-content: center; align-items: center; }
         .res-card { background: #222; padding: 30px; border-radius: 20px; text-align: center; border: 1px solid #ffc107; transform: scale(0.5); transition: 0.3s; }
         .res-card.show { transform: scale(1); }
@@ -53,7 +50,7 @@
 <body>
 
     <div class="wrapper">
-        <header class="header"><a href="../lobby/index.html" style="color:white;"><i class="fa-solid fa-chevron-left"></i></a> <b>WinGo 30s Live</b></header>
+        <header class="header"><b>WinGo 30s Live</b></header>
         <div class="balance-card"><p>Wallet Balance</p><h1>₹ <span id="balance">1000.00</span></h1></div>
         <div class="timer-container">
             <div><p style="font-size:12px; color:#aaa;">Period Number</p><h4 id="period">Loading...</h4></div>
@@ -79,7 +76,7 @@
                 <div class="tab" onclick="switchTab('my', this)">My History</div>
             </div>
             <div id="game-list"><table><thead><tr><th>Period</th><th>Num</th><th>Size</th><th>Color</th></tr></thead><tbody id="game-records"></tbody></table></div>
-            <div id="my-list" style="display:none;"><table><thead><tr><th>Period</th><th>Bet</th><th>Amount</th><th>Result</th></tr></thead><tbody id="my-records"></tbody></table></div>
+            <div id="my-list" style="display:none;"><table><thead><tr><th>Period</th><th>Bet</th><th>Amt</th><th>Res</th></tr></thead><tbody id="my-records"></tbody></table></div>
         </div>
     </div>
 
@@ -101,7 +98,6 @@
     </div>
 
     <script>
-        // --- Firebase Config ---
         const firebaseConfig = {
             apiKey: "AIzaSyD2It_WJyq3VzjGFE0tqlm_Wac7CHEb2LI",
             authDomain: "bdg-game-35af2.firebaseapp.com",
@@ -120,14 +116,11 @@
         let isLockdown = false;
         let selectedBet = "";
 
-        // ১. রিয়েল-টাইম টাইমার (রিফ্রেশ করলেও টাইম ঠিক থাকবে)
         function startTimer() {
             setInterval(() => {
                 const now = new Date();
                 const seconds = now.getSeconds();
                 const s = (seconds >= 30) ? 60 - seconds : 30 - seconds;
-                
-                // পিরিয়ড আইডি আপডেট
                 const pID = generatePeriodID();
                 document.getElementById('period').innerText = pID;
 
@@ -140,9 +133,9 @@
                     document.getElementById('timer').classList.remove('lockdown');
                 }
 
-                // টাইমার যখন ১ সেকেন্ডে আসবে, তখন রেজাল্ট বের করবে
+                // টাইমার ০ হওয়ার ঠিক ১ সেকেন্ড আগে ডাটাবেস থেকে রেজাল্ট কল করবে
                 if (s === 1) {
-                    setTimeout(() => generateResult(pID), 1000);
+                    setTimeout(() => fetchAndGenerateResult(pID), 1100);
                 }
 
                 document.getElementById('timer').innerText = "00:" + (s < 10 ? "0" + s : s);
@@ -153,17 +146,19 @@
             const now = new Date();
             const dateStr = now.toISOString().slice(0, 10).replace(/-/g, "");
             const totalSeconds = (now.getHours() * 3600) + (now.getMinutes() * 60) + now.getSeconds();
-            const periodNum = Math.floor(totalSeconds / 30);
-            return dateStr + periodNum;
+            return dateStr + Math.floor(totalSeconds / 30);
         }
 
-        async function generateResult(pID) {
-            const snapshot = await database.ref('gameControl/nextResult').get();
+        // এটিই প্রধান ফাংশন যা সবার ফোনে একই রেজাল্ট নিশ্চিত করবে
+        async function fetchAndGenerateResult(pID) {
+            // ডাটাবেসের currentResult পাথ থেকে নম্বর পড়া
+            const snapshot = await database.ref('gameControl/currentResult').get();
             let num;
+
             if (snapshot.exists()) {
-                num = parseInt(snapshot.val());
-                database.ref('gameControl/nextResult').remove(); // একবারে ব্যবহার করে মুছে ফেলা
+                num = parseInt(snapshot.val().number);
             } else {
+                // সেফটি মেজার: যদি ডাটাবেসে কিছু না থাকে তবেই কেবল র‍্যান্ডম (তবে অ্যাডমিন প্যানেল ওপেন থাকলে এটি হবে না)
                 num = Math.floor(Math.random() * 10);
             }
 
@@ -174,7 +169,6 @@
             gameHistory.unshift(resObj);
             if(gameHistory.length > 20) gameHistory.pop();
 
-            // বেটিং চেক
             let winTotal = 0, hasBet = false, winFlag = false;
             myHistory.forEach(bet => {
                 if(bet.p == pID && bet.res === "Processing") {
