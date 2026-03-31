@@ -11,44 +11,35 @@
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
         body { background-color: #333; display: flex; justify-content: center; min-height: 100vh; }
         .wrapper { width: 375px; background-color: #1a1a1a; color: white; height: 100vh; overflow-y: auto; position: relative; scrollbar-width: none; }
-        
-        /* Header with Back Button */
         .header { background: #222; padding: 15px; display: flex; align-items: center; border-bottom: 1px solid #333; position: sticky; top: 0; z-index: 10; }
         .header i { font-size: 20px; color: #ffc107; cursor: pointer; margin-right: 15px; }
         .header b { flex: 1; font-size: 18px; }
-        
         .balance-card { background: linear-gradient(135deg, #d32f2f, #ff5252); margin: 15px; border-radius: 15px; padding: 20px; text-align: center; box-shadow: 0 8px 20px rgba(211,47,47,0.3); }
         .timer-container { background: #222; margin: 15px; border-radius: 12px; padding: 15px; display: flex; justify-content: space-between; border: 1px solid #333; }
         .time-display { font-size: 28px; font-weight: bold; color: #ffc107; }
         .lockdown { color: #f44336 !important; animation: blink 0.8s infinite; }
         @keyframes blink { 50% { opacity: 0.3; } }
-        
         .color-btns { display: flex; justify-content: space-around; padding: 10px 15px; }
         .c-btn { border: none; padding: 12px; border-radius: 5px 20px; color: white; font-weight: bold; cursor: pointer; width: 30%; font-size: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
         .green { background: #4caf50; } .violet { background: #9c27b0; } .red { background: #f44336; }
-        
         .number-grid { background: #222; margin: 15px; padding: 15px; border-radius: 12px; display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
         .num-btn { background: #333; border: 2px solid #444; border-radius: 50%; width: 55px; height: 55px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #fff; font-weight: bold; font-size: 18px; }
         .n0, .n5 { border-color: #9c27b0; color: #9c27b0; }
         .n1, .n3, .n7, .n9 { border-color: #4caf50; color: #4caf50; }
         .n2, .n4, .n6, .n8 { border-color: #f44336; color: #f44336; }
-        
         .size-btns { display: flex; justify-content: space-around; padding: 10px 15px; }
         .s-btn { border: none; padding: 12px; border-radius: 20px 5px; color: white; font-weight: bold; cursor: pointer; width: 45%; font-size: 16px; }
         .big { background: #ffa000; } .small { background: #3a7bd5; }
-        
         .history-section { background: #222; margin-top: 20px; border-radius: 20px 20px 0 0; padding: 10px; min-height: 400px; }
         .tabs { display: flex; border-bottom: 1px solid #333; margin-bottom: 10px; }
         .tab { flex: 1; text-align: center; padding: 15px; color: #888; font-weight: bold; cursor: pointer; }
         .tab.active { color: #ffc107; border-bottom: 3px solid #ffc107; }
-        
         table { width: 100%; color: #ccc; text-align: center; font-size: 12px; border-collapse: collapse; }
         td, th { padding: 12px 5px; border-bottom: 1px solid #2a2a2a; }
         .res-ball { width: 25px; height: 25px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; color: white; font-weight: bold; }
         .bg-red { background-color: #f44336; } .bg-green { background-color: #4caf50; }
         .bg-n0 { background: linear-gradient(135deg, #9c27b0 50%, #f44336 50%); }
         .bg-n5 { background: linear-gradient(135deg, #9c27b0 50%, #4caf50 50%); }
-        
         .res-popup { display: none; position: fixed; top: 0; width: 375px; height: 100%; background: rgba(0,0,0,0.9); z-index: 200; flex-direction: column; justify-content: center; align-items: center; }
         .res-card { background: #222; padding: 30px; border-radius: 20px; text-align: center; border: 1px solid #ffc107; transform: scale(0.5); transition: 0.3s; }
         .res-card.show { transform: scale(1); }
@@ -134,7 +125,7 @@
         let myHistory = JSON.parse(localStorage.getItem('myH')) || [];
         let gameHistory = [];
         let isLockdown = false;
-        let selectedBet = "";
+        let lastCheckedPID = "";
 
         function syncUserBalance() {
             database.ref('users/' + userID + '/balance').on('value', (snapshot) => {
@@ -170,7 +161,6 @@
                 document.getElementById('period').innerText = pID;
                 document.getElementById('timer').innerText = "00:" + (s < 10 ? "0" + s : s);
 
-                // Lockdown state
                 if (s <= 5) {
                     isLockdown = true;
                     document.getElementById('timer').classList.add('lockdown');
@@ -179,10 +169,13 @@
                     document.getElementById('timer').classList.remove('lockdown');
                 }
 
-                // রেজাল্ট চেকিং টাইম ফিক্স: টাইমার ০ হওয়ার পর চেক করবে
-                if (s === 30 || s === 60 || s === 0) {
-                    let lastPID = (parseInt(pID) - 1).toString();
-                    setTimeout(() => checkBetResult(lastPID), 1500); 
+                // যখন টাইমার ১ বা ২ এ থাকে, তখন আমরা আগের পিরিয়ড এর রেজাল্ট চেক করি
+                if (s >= 28) { 
+                    let prevPID = (parseInt(pID) - 1).toString();
+                    if(lastCheckedPID !== prevPID) {
+                        lastCheckedPID = prevPID;
+                        setTimeout(() => checkBetResult(prevPID), 2000);
+                    }
                 }
             }, 1000);
         }
@@ -195,14 +188,14 @@
                 const size = res.s;
                 const color = res.c;
 
-                let winTotal = 0, hasBet = false, winFlag = false;
+                let winTotal = 0, foundPending = false, winFlag = false;
                 myHistory.forEach(bet => {
                     if(bet.p == pID && bet.res === "Processing") {
-                        hasBet = true;
+                        foundPending = true;
                         let win = (bet.sel === color || bet.sel === num.toString() || bet.sel === size);
                         if(win) {
                             let mult = isNaN(bet.sel) ? 1.96 : 9;
-                            winTotal += bet.amt * 0.98 * mult;
+                            winTotal += bet.amt * mult;
                             bet.res = "WIN"; bet.color = "#4caf50"; winFlag = true;
                         } else {
                             bet.res = "LOSS"; bet.color = "#f44336";
@@ -210,8 +203,8 @@
                     }
                 });
 
-                if(hasBet) {
-                    database.ref('users/' + userID + '/balance').set(balance + winTotal);
+                if(foundPending) {
+                    if(winTotal > 0) database.ref('users/' + userID + '/balance').set(balance + winTotal);
                     showResultPopup(winFlag, winTotal);
                     localStorage.setItem('myH', JSON.stringify(myHistory));
                     renderTables();
@@ -224,7 +217,7 @@
                 let ballClass = g.n === 0 ? "bg-n0" : (g.n === 5 ? "bg-n5" : (g.n % 2 === 0 ? "bg-red" : "bg-green"));
                 return `<tr><td>${g.p}</td><td><div class="res-ball ${ballClass}">${g.n}</div></td><td>${g.s}</td><td>${g.c}</td></tr>`;
             }).join('');
-            document.getElementById('my-records').innerHTML = myHistory.map(h => `<tr><td>${h.p}</td><td>${h.sel}</td><td>${h.amt}</td><td style="color:${h.color}">${h.res}</td></tr>`).join('');
+            document.getElementById('my-records').innerHTML = myHistory.slice(0,20).map(h => `<tr><td>${h.p}</td><td>${h.sel}</td><td>${h.amt}</td><td style="color:${h.color}">${h.res}</td></tr>`).join('');
         }
 
         function openBet(val) { if(isLockdown) return; selectedBet = val; document.getElementById('bet-title').innerText = "Select: " + val; document.getElementById('modal').style.display = 'flex'; }
@@ -238,6 +231,7 @@
                 myHistory.unshift({ p: currentP, sel: selectedBet, amt: amt, res: "Processing", color: "#ffc107" });
                 localStorage.setItem('myH', JSON.stringify(myHistory));
                 closeModal();
+                renderTables();
             } else {
                 alert("Insufficient Balance!");
             }
