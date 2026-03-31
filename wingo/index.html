@@ -11,33 +11,44 @@
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
         body { background-color: #333; display: flex; justify-content: center; min-height: 100vh; }
         .wrapper { width: 375px; background-color: #1a1a1a; color: white; height: 100vh; overflow-y: auto; position: relative; scrollbar-width: none; }
-        .header { background: #222; padding: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; position: sticky; top: 0; z-index: 10; }
+        
+        /* Header with Back Button */
+        .header { background: #222; padding: 15px; display: flex; align-items: center; border-bottom: 1px solid #333; position: sticky; top: 0; z-index: 10; }
+        .header i { font-size: 20px; color: #ffc107; cursor: pointer; margin-right: 15px; }
+        .header b { flex: 1; font-size: 18px; }
+        
         .balance-card { background: linear-gradient(135deg, #d32f2f, #ff5252); margin: 15px; border-radius: 15px; padding: 20px; text-align: center; box-shadow: 0 8px 20px rgba(211,47,47,0.3); }
         .timer-container { background: #222; margin: 15px; border-radius: 12px; padding: 15px; display: flex; justify-content: space-between; border: 1px solid #333; }
         .time-display { font-size: 28px; font-weight: bold; color: #ffc107; }
         .lockdown { color: #f44336 !important; animation: blink 0.8s infinite; }
         @keyframes blink { 50% { opacity: 0.3; } }
+        
         .color-btns { display: flex; justify-content: space-around; padding: 10px 15px; }
         .c-btn { border: none; padding: 12px; border-radius: 5px 20px; color: white; font-weight: bold; cursor: pointer; width: 30%; font-size: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
         .green { background: #4caf50; } .violet { background: #9c27b0; } .red { background: #f44336; }
+        
         .number-grid { background: #222; margin: 15px; padding: 15px; border-radius: 12px; display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
         .num-btn { background: #333; border: 2px solid #444; border-radius: 50%; width: 55px; height: 55px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #fff; font-weight: bold; font-size: 18px; }
         .n0, .n5 { border-color: #9c27b0; color: #9c27b0; }
         .n1, .n3, .n7, .n9 { border-color: #4caf50; color: #4caf50; }
         .n2, .n4, .n6, .n8 { border-color: #f44336; color: #f44336; }
+        
         .size-btns { display: flex; justify-content: space-around; padding: 10px 15px; }
         .s-btn { border: none; padding: 12px; border-radius: 20px 5px; color: white; font-weight: bold; cursor: pointer; width: 45%; font-size: 16px; }
         .big { background: #ffa000; } .small { background: #3a7bd5; }
+        
         .history-section { background: #222; margin-top: 20px; border-radius: 20px 20px 0 0; padding: 10px; min-height: 400px; }
         .tabs { display: flex; border-bottom: 1px solid #333; margin-bottom: 10px; }
         .tab { flex: 1; text-align: center; padding: 15px; color: #888; font-weight: bold; cursor: pointer; }
         .tab.active { color: #ffc107; border-bottom: 3px solid #ffc107; }
+        
         table { width: 100%; color: #ccc; text-align: center; font-size: 12px; border-collapse: collapse; }
         td, th { padding: 12px 5px; border-bottom: 1px solid #2a2a2a; }
         .res-ball { width: 25px; height: 25px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; color: white; font-weight: bold; }
         .bg-red { background-color: #f44336; } .bg-green { background-color: #4caf50; }
         .bg-n0 { background: linear-gradient(135deg, #9c27b0 50%, #f44336 50%); }
         .bg-n5 { background: linear-gradient(135deg, #9c27b0 50%, #4caf50 50%); }
+        
         .res-popup { display: none; position: fixed; top: 0; width: 375px; height: 100%; background: rgba(0,0,0,0.9); z-index: 200; flex-direction: column; justify-content: center; align-items: center; }
         .res-card { background: #222; padding: 30px; border-radius: 20px; text-align: center; border: 1px solid #ffc107; transform: scale(0.5); transition: 0.3s; }
         .res-card.show { transform: scale(1); }
@@ -47,16 +58,19 @@
 
     <div class="wrapper">
         <header class="header">
+            <i class="fa-solid fa-chevron-left" onclick="location.href='../index.html'"></i>
             <b>WinGo 30s Live</b>
-            <span id="display-uid" style="font-size: 10px; color: #aaa;">ID: Loading...</span>
+            <span id="display-uid" style="font-size: 10px; color: #aaa;">ID: --</span>
         </header>
+
         <div class="balance-card">
             <p>Wallet Balance</p>
             <h1>₹ <span id="balance">0.00</span></h1>
         </div>
+
         <div class="timer-container">
             <div><p style="font-size:12px; color:#aaa;">Period Number</p><h4 id="period">Loading...</h4></div>
-            <div style="text-align:right;"><p style="font-size:12px; color:#aaa;">Time</p><div class="time-display" id="timer">00:00</div></div>
+            <div style="text-align:right;"><p style="font-size:12px; color:#aaa;">Time</p><div class="time-display" id="timer">00:30</div></div>
         </div>
 
         <div class="color-btns">
@@ -95,7 +109,7 @@
         <div class="res-card" id="res-card">
             <h2 id="res-msg">Congratulations</h2>
             <h1 id="res-amount">+ ₹0.00</h1>
-            <button onclick="closeResult()" style="background:#ffc107; padding:10px 20px; border:none; border-radius:10px;">OK</button>
+            <button onclick="closeResult()" style="background:#ffc107; padding:10px 20px; border:none; border-radius:10px; margin-top:15px;">OK</button>
         </div>
     </div>
 
@@ -112,7 +126,6 @@
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
-        // ইউজার আইডি সেটআপ
         let userID = localStorage.getItem('uID') || "UID" + Math.floor(1000 + Math.random() * 9000);
         localStorage.setItem('uID', userID);
         document.getElementById('display-uid').innerText = "ID: " + userID;
@@ -123,17 +136,10 @@
         let isLockdown = false;
         let selectedBet = "";
 
-        // রিয়েল-টাইম ব্যালেন্স সিঙ্ক (অ্যাডমিন আপডেট করলে এখানে অটো বদলে যাবে)
         function syncUserBalance() {
             database.ref('users/' + userID + '/balance').on('value', (snapshot) => {
-                if (snapshot.exists()) {
-                    balance = parseFloat(snapshot.val());
-                } else {
-                    // প্রথমবার ইউজার এলে ডাটাবেসে নতুন এন্ট্রি তৈরি হবে
-                    database.ref('users/' + userID).set({ id: userID, balance: 1000.00 });
-                    balance = 1000.00;
-                }
-                updateUI();
+                balance = snapshot.exists() ? parseFloat(snapshot.val()) : 0;
+                document.getElementById('balance').innerText = balance.toFixed(2);
             });
         }
 
@@ -164,6 +170,7 @@
                 document.getElementById('period').innerText = pID;
                 document.getElementById('timer').innerText = "00:" + (s < 10 ? "0" + s : s);
 
+                // Lockdown state
                 if (s <= 5) {
                     isLockdown = true;
                     document.getElementById('timer').classList.add('lockdown');
@@ -172,8 +179,10 @@
                     document.getElementById('timer').classList.remove('lockdown');
                 }
 
-                if (s === 1) {
-                    setTimeout(() => checkBetResult(pID), 2500);
+                // রেজাল্ট চেকিং টাইম ফিক্স: টাইমার ০ হওয়ার পর চেক করবে
+                if (s === 30 || s === 60 || s === 0) {
+                    let lastPID = (parseInt(pID) - 1).toString();
+                    setTimeout(() => checkBetResult(lastPID), 1500); 
                 }
             }, 1000);
         }
@@ -202,18 +211,12 @@
                 });
 
                 if(hasBet) {
-                    const newBal = balance + winTotal;
-                    database.ref('users/' + userID + '/balance').set(newBal); // ডাটাবেসে উইন ব্যালেন্স আপডেট
+                    database.ref('users/' + userID + '/balance').set(balance + winTotal);
                     showResultPopup(winFlag, winTotal);
+                    localStorage.setItem('myH', JSON.stringify(myHistory));
+                    renderTables();
                 }
             }
-        }
-
-        function updateUI() {
-            document.getElementById('balance').innerText = balance.toFixed(2);
-            localStorage.setItem('bal', balance);
-            localStorage.setItem('myH', JSON.stringify(myHistory));
-            renderTables();
         }
 
         function renderTables() {
@@ -231,9 +234,9 @@
             let amt = parseFloat(document.getElementById('custom-amt').value);
             let currentP = document.getElementById('period').innerText;
             if (balance >= amt && amt > 0) {
-                const newBal = balance - amt;
-                database.ref('users/' + userID + '/balance').set(newBal); // বাজি ধরার সাথে সাথে ব্যালেন্স কাটা যাবে
+                database.ref('users/' + userID + '/balance').set(balance - amt);
                 myHistory.unshift({ p: currentP, sel: selectedBet, amt: amt, res: "Processing", color: "#ffc107" });
+                localStorage.setItem('myH', JSON.stringify(myHistory));
                 closeModal();
             } else {
                 alert("Insufficient Balance!");
@@ -247,6 +250,7 @@
             setTimeout(() => document.getElementById('res-card').classList.add('show'), 10);
         }
         function closeResult() { document.getElementById('res-card').classList.remove('show'); setTimeout(() => document.getElementById('res-popup').style.display = 'none', 300); }
+        
         function switchTab(type, el) {
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active')); el.classList.add('active');
             document.getElementById('game-list').style.display = type === 'game' ? 'block' : 'none';
