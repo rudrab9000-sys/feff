@@ -3,171 +3,96 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WinGo Master - Home</title>
+    <title>BDG Official - Home</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
-        body { background-color: #1a1a1a; color: white; display: flex; justify-content: center; min-height: 100vh; }
-        .container { width: 375px; background: #1a1a1a; min-height: 100vh; position: relative; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+        body { background-color: #1a1a1a; color: white; display: flex; justify-content: center; }
+        .app-container { width: 375px; background: #111; min-height: 100vh; padding-bottom: 80px; }
 
-        #loading-screen { position: fixed; top: 0; width: 375px; height: 100%; background: #1a1a1a; display: flex; justify-content: center; align-items: center; z-index: 1000; }
+        /* Banner */
+        .banner { width: 100%; height: 180px; background: linear-gradient(45deg, #d32f2f, #ffc107); display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold; }
 
-        #auth-screen { padding: 30px; display: none; flex-direction: column; justify-content: center; height: 100vh; }
-        .auth-box { background: #222; padding: 25px; border-radius: 20px; border: 1px solid #333; }
-        h2 { text-align: center; margin-bottom: 20px; color: #ffc107; }
-        input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 10px; border: 1px solid #444; background: #333; color: white; outline: none; }
-        .btn-main { width: 100%; padding: 12px; border: none; border-radius: 10px; background: #ffc107; color: #000; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        .toggle-auth { text-align: center; margin-top: 15px; font-size: 14px; color: #aaa; cursor: pointer; }
+        /* Info Section */
+        .user-info { padding: 15px; display: flex; justify-content: space-between; align-items: center; background: #222; margin: 10px; border-radius: 10px; }
+        .balance-box h2 { color: #ffc107; font-size: 20px; }
+        .balance-box p { font-size: 12px; color: #888; }
 
-        #lobby-screen { display: none; padding-bottom: 70px; }
-        .lobby-header { background: #222; padding: 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; }
-        .user-info { display: flex; align-items: center; gap: 10px; }
-        .user-info i { font-size: 24px; color: #ffc107; }
-        
-        .promo-banner { margin: 15px; height: 120px; background: linear-gradient(45deg, #d32f2f, #ffc107); border-radius: 15px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; }
-        
+        /* Game Grid */
         .game-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 15px; }
-        .game-card { background: #222; border-radius: 15px; padding: 20px; text-align: center; border: 1px solid #333; cursor: pointer; }
-        .game-card i { font-size: 40px; color: #ffc107; margin-bottom: 10px; }
+        .game-card { background: #222; border-radius: 15px; padding: 20px; text-align: center; border: 1px solid #333; cursor: pointer; transition: 0.3s; text-decoration: none; color: white; }
+        .game-card:active { transform: scale(0.95); }
+        .game-card i { font-size: 40px; margin-bottom: 10px; color: #ffc107; }
+        .game-card h3 { font-size: 16px; }
 
-        .nav-bar { position: fixed; bottom: 0; width: 375px; background: #222; display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #333; }
-        .nav-item { color: #888; text-align: center; font-size: 12px; }
+        /* Bottom Nav */
+        .bottom-nav { position: fixed; bottom: 0; width: 375px; background: #222; display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #333; }
+        .nav-item { text-align: center; color: #888; text-decoration: none; font-size: 11px; flex: 1; }
         .nav-item.active { color: #ffc107; }
+        .nav-item i { font-size: 22px; margin-bottom: 4px; display: block; }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <div id="loading-screen"><i class="fas fa-spinner fa-spin fa-2x" style="color: #ffc107;"></i></div>
+    <div class="app-container">
+        <div class="banner">BDG GAME OFFICIAL</div>
 
-        <div id="auth-screen">
-            <div class="auth-box">
-                <h2 id="auth-title">Login</h2>
-                <input type="number" id="phone" placeholder="Phone Number">
-                <input type="password" id="password" placeholder="Password">
-                <button class="btn-main" id="auth-btn" onclick="handleAuth()">Login</button>
-                <p class="toggle-auth" onclick="toggleAuth()">Don't have an account? Register</p>
+        <div class="user-info">
+            <div class="balance-box">
+                <p>Total Balance</p>
+                <h2>₹ <span id="main-bal">0.00</span></h2>
+            </div>
+            <a href="wallet/index.html" style="background:#ffc107; color:black; padding:8px 15px; border-radius:5px; text-decoration:none; font-weight:bold; font-size:12px;">Deposit</a>
+        </div>
+
+        <div class="game-grid">
+            <a href="wingo/index.html" class="game-card">
+                <i class="fa-solid fa-dice"></i>
+                <h3>Win Go</h3>
+                <p style="font-size:10px; color:#555;">1 Min / 3 Min</p>
+            </a>
+            <div class="game-card" onclick="alert('Coming Soon!')">
+                <i class="fa-solid fa-slot-machine"></i>
+                <h3>Slots</h3>
+                <p style="font-size:10px; color:#555;">Popular</p>
+            </div>
+            <div class="game-card" onclick="alert('Coming Soon!')">
+                <i class="fa-solid fa-cards-blank"></i>
+                <h3>Casino</h3>
+                <p style="font-size:10px; color:#555;">Live Dealer</p>
+            </div>
+            <div class="game-card" onclick="alert('Coming Soon!')">
+                <i class="fa-solid fa-trophy"></i>
+                <h3>Sports</h3>
+                <p style="font-size:10px; color:#555;">Cricket/Football</p>
             </div>
         </div>
 
-        <div id="lobby-screen">
-            <header class="lobby-header">
-                <div class="user-info">
-                    <i class="fa-solid fa-circle-user"></i>
-                    <div>
-                        <p id="user-id-display" style="font-size: 11px; color: #aaa;">ID: --</p>
-                        <h4 id="user-balance-display">₹ 0.00</h4>
-                    </div>
-                </div>
-                <button onclick="logout()" style="background: none; border: none; color: #f44336;"><i class="fa-solid fa-right-from-bracket fa-lg"></i></button>
-            </header>
-
-            <div class="promo-banner">WINGO 30S LIVE</div>
-
-            <div class="game-grid">
-                <div class="game-card" onclick="location.href='wingo.html'">
-                    <i class="fa-solid fa-gamepad"></i>
-                    <h3>WinGo 30s</h3>
-                    <p style="font-size: 10px; color: #4caf50;">● Online</p>
-                </div>
-                <div class="game-card" onclick="alert('Coming Soon')">
-                    <i class="fa-solid fa-dice"></i>
-                    <h3>TrX Hash</h3>
-                </div>
-            </div>
-
-            <nav class="nav-bar">
-                <div class="nav-item active"><i class="fa-solid fa-house"></i><br>Home</div>
-                <div class="nav-item"><i class="fa-solid fa-wallet"></i><br>Wallet</div>
-                <div class="nav-item"><i class="fa-solid fa-user"></i><br>Profile</div>
-            </nav>
-        </div>
+        <nav class="bottom-nav">
+            <a href="index.html" class="nav-item active"><i class="fa-solid fa-house"></i>Home</a>
+            <a href="activity/index.html" class="nav-item"><i class="fa-solid fa-gift"></i>Activity</a>
+            <a href="wallet/index.html" class="nav-item"><i class="fa-solid fa-wallet"></i>Wallet</a>
+            <a href="account/index.html" class="nav-item"><i class="fa-solid fa-user"></i>Account</a>
+        </nav>
     </div>
 
     <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyD2It_WJyq3VzjGFE0tqlm_Wac7CHEb2LI",
-            authDomain: "bdg-game-35af2.firebaseapp.com",
-            databaseURL: "https://bdg-game-35af2-default-rtdb.firebaseio.com",
-            projectId: "bdg-game-35af2",
-            storageBucket: "bdg-game-35af2.firebasestorage.app",
-            messagingSenderId: "1040854462703",
-            appId: "1:1040854462703:web:4875b19f420c57dafbeb1a"
-        };
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const database = firebase.database();
-
-        let isLoginMode = true;
-
-        function toggleAuth() {
-            isLoginMode = !isLoginMode;
-            document.getElementById('auth-title').innerText = isLoginMode ? "Login" : "Register";
-            document.getElementById('auth-btn').innerText = isLoginMode ? "Login" : "Register";
-            document.querySelector('.toggle-auth').innerText = isLoginMode ? "Don't have an account? Register" : "Already have an account? Login";
-        }
-
-        async function handleAuth() {
-            const phone = document.getElementById('phone').value.trim();
-            const password = document.getElementById('password').value.trim();
-
-            if(!phone || !password) return alert("Please fill all fields");
-            if(phone.length < 10) return alert("Enter a valid phone number");
-
-            // ফোন নম্বরকে ইমেইলে রূপান্তর করা (Firebase Auth এর জন্য)
-            const phoneEmail = phone + "@wingo.com";
-
-            try {
-                if (isLoginMode) {
-                    await auth.signInWithEmailAndPassword(phoneEmail, password);
-                } else {
-                    const res = await auth.createUserWithEmailAndPassword(phoneEmail, password);
-                    const generatedUID = "UID" + Math.floor(100000 + Math.random() * 900000);
-                    
-                    await database.ref('users/' + res.user.uid).set({
-                        phone: phone,
-                        uID: generatedUID,
-                        balance: 0.00
-                    });
-                }
-            } catch (error) {
-                alert("Login Failed: " + error.message);
-            }
-        }
-
-        auth.onAuthStateChanged(user => {
-            const loading = document.getElementById('loading-screen');
-            const authScreen = document.getElementById('auth-screen');
-            const lobbyScreen = document.getElementById('lobby-screen');
-
-            if (user) {
-                authScreen.style.display = 'none';
-                lobbyScreen.style.display = 'block';
-                loadUserData(user.uid);
+        function checkUser() {
+            // ইউজারের ডাটা চেক করা
+            const user = JSON.parse(localStorage.getItem('userData'));
+            if(!user) {
+                // যদি লগইন না থাকে তবে লগইন পেজে পাঠাবে
+                window.location.href = "auth/login.html"; 
             } else {
-                authScreen.style.display = 'flex';
-                lobbyScreen.style.display = 'none';
+                // ব্যালেন্স লোড করা
+                let bal = localStorage.getItem('bal') || "0.00";
+                document.getElementById('main-bal').innerText = parseFloat(bal).toFixed(2);
             }
-            loading.style.display = 'none';
-        });
-
-        function loadUserData(uid) {
-            database.ref('users/' + uid).on('value', (snapshot) => {
-                const data = snapshot.val();
-                if (data) {
-                    document.getElementById('user-id-display').innerText = "ID: " + data.uID;
-                    document.getElementById('user-balance-display').innerText = "₹ " + parseFloat(data.balance).toFixed(2);
-                    localStorage.setItem('myUID', uid);
-                }
-            });
         }
 
-        function logout() {
-            if(confirm("Logout?")) auth.signOut();
-        }
+        window.onload = checkUser;
+        // প্রতি ৫ সেকেন্ডে ব্যালেন্স আপডেট হবে (অ্যাডমিন এপ্রুভ করলে যাতে দেখা যায়)
+        setInterval(checkUser, 5000);
     </script>
 </body>
 </html>
