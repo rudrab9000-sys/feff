@@ -15,7 +15,6 @@
         .admin-wrapper { max-width: 1000px; margin: 0 auto; }
         h2 { color: #ffc107; margin-bottom: 20px; text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px; }
         
-        /* Live Status Card */
         .live-status { background: #222; padding: 15px; border-radius: 12px; margin-bottom: 20px; display: flex; justify-content: space-around; align-items: center; border: 1px dashed #444; }
         .status-box { text-align: center; }
         .status-box p { font-size: 12px; color: #888; text-transform: uppercase; }
@@ -33,12 +32,13 @@
         th { color: #888; }
         .status-text { font-size: 14px; margin-top: 15px; text-align: center; display: block; font-weight: bold; }
         .lock-warning { color: #f44336; font-size: 12px; margin-top: 5px; display: none; }
+        .server-tag { background: #4caf50; color: white; font-size: 10px; padding: 2px 8px; border-radius: 10px; margin-left: 10px; vertical-align: middle; }
     </style>
 </head>
 <body>
 
 <div class="admin-wrapper">
-    <h2><i class="fa-solid fa-user-shield"></i> BDG Master Admin (LIVE)</h2>
+    <h2><i class="fa-solid fa-user-shield"></i> BDG Master Admin <span class="server-tag">SERVER ACTIVE</span></h2>
 
     <div class="live-status">
         <div class="status-box">
@@ -54,21 +54,21 @@
     <div class="admin-grid">
         <div class="card">
             <h3><i class="fa-solid fa-gamepad"></i> Next Result Control</h3>
-            <p style="font-size: 11px; color: #888; margin-top: 5px;">টাইমার ৫ সেকেন্ড হওয়ার আগে নম্বর সেট করুন।</p>
+            <p style="font-size: 11px; color: #888; margin-top: 5px;">নম্বর সিলেক্ট করলে সেটি যাবে, না করলে অটো র‍্যান্ডম হবে।</p>
             
             <div class="btn-grid">
                 <script>
                     for(let i=0; i<=9; i++) {
-                        document.write(`<button class="num-btn" id="btn-${i}" onclick="setNextResult(${i})">${i}</button>`);
+                        document.write(`<button class="num-btn" id="btn-${i}" onclick="setManualResult(${i})">${i}</button>`);
                     }
                 </script>
             </div>
             
             <span id="sync-status" class="status-text">Checking Database...</span>
-            <p id="lock-msg" class="lock-warning">⚠️ Betting Locked! Wait for next round.</p>
+            <p id="lock-msg" class="lock-warning">⚠️ Syncing Result for next round...</p>
             
-            <button onclick="clearNext()" style="margin-top:20px; width:100%; padding:12px; background:none; border:1px solid #f44336; color:#f44336; border-radius:8px; cursor:pointer; font-weight:bold; transition: 0.3s;">
-                <i class="fa-solid fa-rotate"></i> Reset to Auto Mode
+            <button onclick="clearManual()" style="margin-top:20px; width:100%; padding:12px; background:none; border:1px solid #ffc107; color:#ffc107; border-radius:8px; cursor:pointer; font-weight:bold;">
+                <i class="fa-solid fa-rotate"></i> Reset to Auto
             </button>
         </div>
 
@@ -79,7 +79,7 @@
                     <tr><th>User ID</th><th>Bet</th><th>Amount</th><th>Status</th></tr>
                 </thead>
                 <tbody id="request-table">
-                    <tr><td colspan="4" style="text-align:center; color:#555; padding: 20px;">Watching live bets...</td></tr>
+                    <tr><td colspan="4" style="text-align:center; color:#555; padding: 20px;">System is handling results automatically.</td></tr>
                 </tbody>
             </table>
         </div>
@@ -87,7 +87,6 @@
 </div>
 
 <script>
-    // --- Firebase Configuration ---
     const firebaseConfig = {
         apiKey: "AIzaSyD2It_WJyq3VzjGFE0tqlm_Wac7CHEb2LI",
         authDomain: "bdg-game-35af2.firebaseapp.com",
@@ -101,62 +100,79 @@
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
 
-    // ১. লাইভ টাইমার সিঙ্ক (Wingo.html এর সাথে হুবহু মিল)
-    function startAdminTimer() {
+    let manualSelection = null;
+    let lastProcessedPeriod = "";
+
+    function startAdminSystem() {
         setInterval(() => {
             const now = new Date();
             const seconds = now.getSeconds();
             const remaining = (seconds >= 30) ? 60 - seconds : 30 - seconds;
             
-            // পিরিয়ড আইডি জেনারেট
             const dateStr = now.toISOString().slice(0, 10).replace(/-/g, "");
-            const totalSeconds = (now.getHours() * 3600) + (now.getMinutes() * 60) + seconds;
-            const currentPeriod = dateStr + Math.floor(totalSeconds / 30);
+            const currentPeriod = dateStr + Math.floor(((now.getHours() * 3600) + (now.getMinutes() * 60) + seconds) / 30);
             
             document.getElementById('admin-period').innerText = currentPeriod;
             document.getElementById('admin-timer').innerText = "00:" + (remaining < 10 ? "0" + remaining : remaining);
 
-            // ৫ সেকেন্ডের নিচে গেলে ইনপুট লক দেখাবে
+            // ১. টাইমার যখন ২ সেকেন্ডে আসবে, তখন রেজাল্ট ডাটাবেসে পুশ করবে
+            if (remaining === 2 && lastProcessedPeriod !== currentPeriod) {
+                lastProcessedPeriod = currentPeriod;
+                processFinalResult();
+            }
+
+            // লক ওয়ার্নিং
             if(remaining <= 5) {
                 document.getElementById('lock-msg').style.display = 'block';
-                document.querySelectorAll('.num-btn').forEach(b => b.style.opacity = '0.5');
             } else {
                 document.getElementById('lock-msg').style.display = 'none';
-                document.querySelectorAll('.num-btn').forEach(b => b.style.opacity = '1');
             }
         }, 1000);
     }
 
-    // ২. ডাটাবেস থেকে বর্তমান "Hacked Result" মনিটর করা
-    database.ref('gameControl/nextResult').on('value', (snapshot) => {
-        const val = snapshot.val();
-        document.querySelectorAll('.num-btn').forEach(b => b.classList.remove('active'));
-        const status = document.getElementById('sync-status');
-        
-        if (val !== null) {
-            document.getElementById('btn-' + val).classList.add('active');
-            status.innerHTML = `<span style="color:#ffc107;">🔥 Active Hack: Number ${val}</span>`;
+    // রেজাল্ট প্রসেস করার ফাংশন (অটো + ম্যানুয়াল)
+    function processFinalResult() {
+        let finalNum;
+        if (manualSelection !== null) {
+            finalNum = manualSelection;
+            document.getElementById('sync-status').innerHTML = `<span style="color:#ffc107;">🔥 Manual Result Sent: ${finalNum}</span>`;
         } else {
-            status.innerHTML = `<span style="color:#4caf50;">✅ Status: Auto Mode (Random)</span>`;
+            finalNum = Math.floor(Math.random() * 10);
+            document.getElementById('sync-status').innerHTML = `<span style="color:#4caf50;">✅ Auto Result Sent: ${finalNum}</span>`;
         }
-    });
 
-    // ৩. রেজাল্ট সেট করা
-    function setNextResult(num) {
+        // ডাটাবেসে পাঠানো
+        database.ref('gameControl/currentResult').set({
+            number: finalNum,
+            period: document.getElementById('admin-period').innerText,
+            time: Date.now()
+        });
+
+        // রাউন্ড শেষে ম্যানুয়াল সিলেকশন রিসেট
+        setTimeout(() => {
+            clearManual();
+        }, 3000);
+    }
+
+    function setManualResult(num) {
         const remaining = parseInt(document.getElementById('admin-timer').innerText.split(":")[1]);
-        if(remaining <= 2) {
-            alert("Too late! Wait for the next period.");
+        if(remaining <= 5) {
+            alert("Time over! Wait for next round.");
             return;
         }
-        database.ref('gameControl/nextResult').set(num);
+        manualSelection = num;
+        document.querySelectorAll('.num-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('btn-' + num).classList.add('active');
+        document.getElementById('sync-status').innerHTML = `<span style="color:#ffc107;">Selected: ${num} (Will be sent at 00:02)</span>`;
     }
 
-    // ৪. অটো মোডে ফেরত যাওয়া
-    function clearNext() {
-        database.ref('gameControl/nextResult').remove();
+    function clearManual() {
+        manualSelection = null;
+        document.querySelectorAll('.num-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('sync-status').innerHTML = `<span style="color:#4caf50;">✅ Ready for Next Round</span>`;
     }
 
-    window.onload = startAdminTimer;
+    window.onload = startAdminSystem;
 </script>
 
 </body>
